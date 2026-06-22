@@ -31,3 +31,22 @@ export const isEmail = (value: unknown): value is string => {
 
   return /^[a-z0-9_.-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(value);
 };
+
+export type PublicCible = "parent" | "enfant" | "tous";
+
+export const isPublicCible = (value: unknown): value is PublicCible =>
+  value === "parent" || value === "enfant" || value === "tous";
+
+/** Valide une longitude GeoJSON (degrés, [-180, 180]). */
+export const isLongitude = (value: unknown): value is number =>
+  isNumber(value) && value >= -180 && value <= 180;
+
+/** Valide une latitude GeoJSON (degrés, [-90, 90]). */
+export const isLatitude = (value: unknown): value is number =>
+  isNumber(value) && value >= -90 && value <= 90;
+
+/** Tableau non vide de chaînes de caractères. */
+export const isStringArray = (value: unknown): value is string[] =>
+  isArray<unknown>(value) &&
+  value.length > 0 &&
+  value.every((item) => isString(item));

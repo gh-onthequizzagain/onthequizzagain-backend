@@ -3,15 +3,16 @@ import express from "express";
 import cors from "cors";
 
 import defaultRouter from "./routes/default";
+import questionRouter from "./routes/question.routes";
 
-import { PORT_SERVER } from "./constants";
+import { PORT_SERVER, DB_NAME } from "./constants";
 import { logInfo } from "./helpers/log";
 
 import errorHandler from "./middlewares/error";
-//import { connectDB } from "./config/db";
+import { connectDB } from "./config/db";
 
 // mongoDb init
-//connectDB("name_bdd");
+connectDB(DB_NAME);
 
 // express init
 const app = express();
@@ -19,6 +20,9 @@ app.use(express.json());
 app.use(cors());
 
 //routes
+app.use("/api/questions", questionRouter);
+// defaultRouter contient le catch-all 404 (router.all(/.*/)) : il doit
+// rester monté EN DERNIER, sinon il intercepte toutes les routes.
 app.use(defaultRouter);
 
 //Error : on gère les erreurs de maniere global
