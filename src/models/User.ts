@@ -3,9 +3,7 @@ import { Schema, model, type Document, type Types } from "mongoose";
 export interface IUser extends Document {
   _id: Types.ObjectId;
   email: string;
-  account: {
-    username: string;
-  };
+  username: string;
   token: string;
   salt: string;
   hash: string;
@@ -22,11 +20,9 @@ const UserSchema = new Schema<IUser>(
       trim: true,
       lowercase: true,
     },
-    account: {
-      username: {
-        type: String,
-        required: true,
-      },
+    username: {
+      type: String,
+      required: true,
     },
     token: {
       type: String,
