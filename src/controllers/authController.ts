@@ -1,3 +1,4 @@
+/// <reference path="../types/express.d.ts" />
 import type { Request, Response, NextFunction } from "express";
 import { HttpError } from "../middlewares/error";
 import { isEmail, isString } from "../helpers/validators";
