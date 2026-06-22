@@ -1,17 +1,6 @@
-import { Schema, model, type Document, type Types } from "mongoose";
+import { Schema, model, InferSchemaType, type Types } from "mongoose";
 
-export interface IUser extends Document {
-  _id: Types.ObjectId;
-  email: string;
-  username: string;
-  token: string;
-  salt: string;
-  hash: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const UserSchema = new Schema<IUser>(
+const UserSchema = new Schema(
   {
     email: {
       type: String,
@@ -20,9 +9,11 @@ const UserSchema = new Schema<IUser>(
       trim: true,
       lowercase: true,
     },
-    username: {
-      type: String,
-      required: true,
+    account: {
+      username: {
+        type: String,
+        required: true,
+      },
     },
     token: {
       type: String,
@@ -40,4 +31,6 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true },
 );
 
-export default model<IUser>("User", UserSchema);
+export type UserType = InferSchemaType<typeof UserSchema> & { _id?: Types.ObjectId };
+
+export default model<UserType>("User", UserSchema);
