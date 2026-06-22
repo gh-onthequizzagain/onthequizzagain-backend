@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 
 import defaultRouter from "./routes/default";
+
 import questionRouter from "./routes/question.routes";
 
 import { PORT_SERVER, DB_NAME } from "./constants";
@@ -19,10 +20,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-//routes
+//routes métier (montées avant le routeur par défaut qui contient le 404)
+
 app.use("/api/questions", questionRouter);
-// defaultRouter contient le catch-all 404 (router.all(/.*/)) : il doit
-// rester monté EN DERNIER, sinon il intercepte toutes les routes.
+
+//routes par défaut (welcome + catch-all 404)
 app.use(defaultRouter);
 
 //Error : on gère les erreurs de maniere global
