@@ -1,13 +1,13 @@
 import { QuestionModel } from "../models/Question";
 import { MAX_SEARCH_RADIUS } from "../constants";
-import type { PublicCible } from "../helpers/validators";
+import type { TargetAudience } from "../helpers/validators";
 
 /**
  * Récupère les questions dont le point d'intérêt est suffisamment proche de la
  * position GPS fournie : on ne garde que celles dont la distance réelle est
- * inférieure ou égale à leur propre `rayonDeclenchement`.
+ * inférieure ou égale à leur propre `triggerRadius`.
  *
- * `publicCible` (optionnel) restreint aux questions du public visé ; les
+ * `targetAudience` (optionnel) restreint aux questions du public visé ; les
  * questions "tous" sont toujours incluses.
  *
  * Sécurité : la bonne réponse n'est jamais renvoyée (le scoring se fait côté
@@ -16,11 +16,11 @@ import type { PublicCible } from "../helpers/validators";
 export const findNearby = async (
   lng: number,
   lat: number,
-  publicCible?: PublicCible,
+  targetAudience?: TargetAudience,
 ) => {
   const publicFilter =
-    publicCible && publicCible !== "tous"
-      ? { publicCible: { $in: [publicCible, "tous"] } }
+    targetAudience && targetAudience !== "tous"
+      ? { TargetAudience: { $in: [targetAudience, "tous"] } }
       : {};
 
   return QuestionModel.aggregate([
@@ -34,8 +34,8 @@ export const findNearby = async (
       },
     },
     // On ne conserve que les questions dans leur rayon de déclenchement.
-    { $match: { $expr: { $lte: ["$distance", "$rayonDeclenchement"] } } },
+    { $match: { $expr: { $lte: ["$distance", "$triggerRadius"] } } },
     // On masque la bonne réponse avant de renvoyer au client.
-    { $project: { bonneReponse: 0 } },
+    { $project: { correctAnswer: 0 } },
   ]);
 };

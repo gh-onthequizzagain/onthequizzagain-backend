@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 
 import { HttpError } from "../middlewares/error";
-import { isLatitude, isLongitude, isPublicCible } from "../helpers/validators";
+import { isLatitude, isLongitude, isTargetAudience } from "../helpers/validators";
 import * as questionService from "../services/questionService";
 
 /**
@@ -20,8 +20,8 @@ export const nearbyController = async (req: Request, res: Response) => {
   }
 
   const publicParam = req.query.public;
-  const publicCible = isPublicCible(publicParam) ? publicParam : undefined;
+  const targetAudience = isTargetAudience(publicParam) ? publicParam : undefined;
 
-  const questions = await questionService.findNearby(lng, lat, publicCible);
+  const questions = await questionService.findNearby(lng, lat, targetAudience);
   res.json(questions);
 };

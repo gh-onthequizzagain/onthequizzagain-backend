@@ -14,36 +14,36 @@ import { logInfo, logSuccess } from "../helpers/log";
  */
 const questions = [
   {
-    texte:
+    text:
       "Quel monument parisien a été construit pour l'Exposition universelle de 1889 ?",
-    choixReponses: ["La Tour Eiffel", "L'Arc de Triomphe", "Le Panthéon"],
-    bonneReponse: "La Tour Eiffel",
+    answerChoices: ["La Tour Eiffel", "L'Arc de Triomphe", "Le Panthéon"],
+    correctAnswer: "La Tour Eiffel",
     anecdote:
       "La Tour Eiffel devait être démontée après 20 ans ; elle a été sauvée par son utilité comme antenne radio.",
-    localisation: { type: "Point" as const, coordinates: [2.2945, 48.8584] },
-    rayonDeclenchement: 2000,
-    publicCible: "tous" as const,
+    location: { type: "Point" as const, coordinates: [2.2945, 48.8584] },
+    triggerRadius: 2000,
+    TargetAudience: "tous" as const,
   },
   {
-    texte:
+    text:
       "Près de quelle ville se trouve le célèbre vignoble de Pouilly-Fuissé ?",
-    choixReponses: ["Mâcon", "Dijon", "Auxerre"],
-    bonneReponse: "Mâcon",
+    answerChoices: ["Mâcon", "Dijon", "Auxerre"],
+    correctAnswer: "Mâcon",
     anecdote:
       "Le Mâconnais est réputé pour ses vins blancs issus du cépage Chardonnay.",
-    localisation: { type: "Point" as const, coordinates: [4.8357, 46.3069] },
-    rayonDeclenchement: 5000,
-    publicCible: "parent" as const,
+    location: { type: "Point" as const, coordinates: [4.8357, 46.3069] },
+    triggerRadius: 5000,
+    TargetAudience: "parent" as const,
   },
   {
-    texte: "Quel animal est le symbole de la ville de Lyon ?",
-    choixReponses: ["Le lion", "L'aigle", "Le loup"],
-    bonneReponse: "Le lion",
+    text: "Quel animal est le symbole de la ville de Lyon ?",
+    answerChoices: ["Le lion", "L'aigle", "Le loup"],
+    correctAnswer: "Le lion",
     anecdote:
       "Le lion figure sur les armoiries de Lyon, en référence (populaire) au nom de la ville.",
-    localisation: { type: "Point" as const, coordinates: [4.8357, 45.764] },
-    rayonDeclenchement: 3000,
-    publicCible: "enfant" as const,
+    location: { type: "Point" as const, coordinates: [4.8357, 45.764] },
+    triggerRadius: 3000,
+    TargetAudience: "enfant" as const,
   },
 ];
 

@@ -16,17 +16,17 @@ const pointSchema = new Schema(
 /**
  * Collection `questions` (cf. spec 10.1).
  * Chaque question est rattachée à un point d'intérêt géographique et n'est
- * déclenchée que lorsque l'utilisateur entre dans son `rayonDeclenchement`.
+ * déclenchée que lorsque l'utilisateur entre dans son `triggerRadius`.
  */
 const questionSchema = new Schema({
-  texte: { type: String, required: true, trim: true },
-  choixReponses: { type: [String], required: true },
-  bonneReponse: { type: String, required: true },
+  text: { type: String, required: true, trim: true },
+  answerChoices: { type: [String], required: true },
+  correctAnswer: { type: String, required: true },
   anecdote: { type: String, default: "" },
-  localisation: { type: pointSchema, required: true },
+  location: { type: pointSchema, required: true },
   // rayon (en mètres) autour du point dans lequel la question se déclenche
-  rayonDeclenchement: { type: Number, required: true, default: 500 },
-  publicCible: {
+  triggerRadius: { type: Number, required: true, default: 500 },
+  TargetAudience: {
     type: String,
     enum: ["parent", "enfant", "tous"],
     default: "tous",
@@ -34,7 +34,7 @@ const questionSchema = new Schema({
 });
 
 // Index géospatial nécessaire aux requêtes de proximité ($geoNear / $near).
-questionSchema.index({ localisation: "2dsphere" });
+questionSchema.index({ location: "2dsphere" });
 
 export type Question = InferSchemaType<typeof questionSchema>;
 export type QuestionDocument = HydratedDocument<Question>;

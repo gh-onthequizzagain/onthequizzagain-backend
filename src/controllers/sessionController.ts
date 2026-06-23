@@ -8,26 +8,26 @@ import * as sessionService from "../services/sessionService";
 /**
  * POST /api/sessions
  * Démarre une nouvelle partie pour l'utilisateur connecté.
- * Body (optionnel) : { nomTrajet }
+ * Body (optionnel) : { routeName }
  */
 export const createSessionController = async (req: Request, res: Response) => {
   const { user } = req as AuthRequest;
-  const { nomTrajet } = req.body;
+  const { routeName } = req.body;
 
-  if (nomTrajet !== undefined && !isString(nomTrajet)) {
-    throw new HttpError("nomTrajet invalide", 400);
+  if (routeName !== undefined && !isString(routeName)) {
+    throw new HttpError("routeName invalide", 400);
   }
 
   const session = await sessionService.createSession(
     user._id,
-    isString(nomTrajet) ? nomTrajet : "",
+    isString(routeName) ? routeName : "",
   );
   res.status(201).json(session);
 };
 
 /**
  * PATCH /api/sessions/:id
- * - Enregistre une réponse : body { questionId, reponseDonnee }
+ * - Enregistre une réponse : body { questionId, responseGiven }
  * - OU termine la partie : body { termine: true }
  */
 export const updateSessionController = async (req: Request, res: Response) => {
@@ -35,7 +35,7 @@ export const updateSessionController = async (req: Request, res: Response) => {
   const { id } = req.params;
   if (!isMongoId(id)) throw new HttpError("Identifiant de session invalide", 400);
 
-  const { questionId, reponseDonnee, termine } = req.body;
+  const { questionId, responseGiven, termine } = req.body;
 
   if (termine === true) {
     const session = await sessionService.endSession(id, user._id);
@@ -43,9 +43,9 @@ export const updateSessionController = async (req: Request, res: Response) => {
     return;
   }
 
-  if (!isMongoId(questionId) || !isString(reponseDonnee)) {
+  if (!isMongoId(questionId) || !isString(responseGiven)) {
     throw new HttpError(
-      "Champs requis : questionId (ObjectId) et reponseDonnee (string)",
+      "Champs requis : questionId (ObjectId) et responseGiven (string)",
       400,
     );
   }
@@ -54,7 +54,7 @@ export const updateSessionController = async (req: Request, res: Response) => {
     id,
     user._id,
     questionId,
-    reponseDonnee,
+    responseGiven,
   );
   res.status(200).json(session);
 };

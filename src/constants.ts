@@ -8,7 +8,7 @@ export const URI_BD = process.env.URI_BD;
 export const DB_NAME = "onthequizzagain";
 
 // Rayon de recherche maximal (en mètres) pour $geoNear sur /api/questions/nearby.
-// On filtre ensuite chaque question par son propre rayonDeclenchement.
+// On filtre ensuite chaque question par son propre triggerRadius.
 export const MAX_SEARCH_RADIUS = 10000;
 
 export enum Color {

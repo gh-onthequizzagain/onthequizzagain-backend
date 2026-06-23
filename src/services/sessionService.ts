@@ -8,33 +8,33 @@ import { HttpError } from "../middlewares/error";
  * Crée une nouvelle partie de quiz pour l'utilisateur connecté.
  */
 export const createSession = async (
-  utilisateurId: Types.ObjectId,
-  nomTrajet: string,
+  userId: Types.ObjectId,
+  routeName: string,
 ) => {
-  return SessionModel.create({ utilisateurId, nomTrajet });
+  return SessionModel.create({ userId, RouteName: routeName });
 };
 
 /**
  * Enregistre la réponse du joueur à une question : le scoring est fait côté
- * serveur (comparaison avec `bonneReponse`), jamais côté client.
+ * serveur (comparaison avec `correctAnswer`), jamais côté client.
  * Vérifie que la session appartient bien à l'utilisateur.
  */
 export const answerQuestion = async (
   sessionId: string,
-  utilisateurId: Types.ObjectId,
+  userId: Types.ObjectId,
   questionId: string,
-  reponseDonnee: string,
+  responseGiven: string,
 ) => {
-  const session = await SessionModel.findOne({ _id: sessionId, utilisateurId });
+  const session = await SessionModel.findOne({ _id: sessionId, userId });
   if (!session) throw new HttpError("Session introuvable", 404);
 
   const question = await QuestionModel.findById(questionId);
   if (!question) throw new HttpError("Question introuvable", 404);
 
-  const correcte = question.bonneReponse === reponseDonnee;
+  const isCorrect = question.correctAnswer === responseGiven;
 
-  session.questionsRepondues.push({ questionId: question._id, reponseDonnee, correcte });
-  if (correcte) session.scoreTotal += 1;
+  session.answeredQuestions.push({ questionId: question._id, responseGiven, isCorrect });
+  if (isCorrect) session.totalScore += 1;
 
   await session.save();
   return session;
@@ -46,12 +46,12 @@ export const answerQuestion = async (
  */
 export const endSession = async (
   sessionId: string,
-  utilisateurId: Types.ObjectId,
+  userId: Types.ObjectId,
 ) => {
-  const session = await SessionModel.findOne({ _id: sessionId, utilisateurId });
+  const session = await SessionModel.findOne({ _id: sessionId, userId });
   if (!session) throw new HttpError("Session introuvable", 404);
 
-  session.dateFin = new Date();
+  session.endDate = new Date();
   await session.save();
   return session;
 };
@@ -62,9 +62,9 @@ export const endSession = async (
  */
 export const getHistory = async (
   sessionId: string,
-  utilisateurId: Types.ObjectId,
+  userId: Types.ObjectId,
 ) => {
-  const session = await SessionModel.findOne({ _id: sessionId, utilisateurId });
+  const session = await SessionModel.findOne({ _id: sessionId, userId });
   if (!session) throw new HttpError("Session introuvable", 404);
 
   return session;

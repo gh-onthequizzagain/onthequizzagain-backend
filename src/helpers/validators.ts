@@ -38,7 +38,7 @@ export const isLatitude = (value: unknown): value is number =>
 export const isLongitude = (value: unknown): value is number =>
   isNumber(value) && value >= -180 && value <= 180;
 
-export type PublicCible = "parent" | "enfant" | "tous";
+export type TargetAudience = "parent" | "enfant" | "tous";
 
-export const isPublicCible = (value: unknown): value is PublicCible =>
+export const isTargetAudience = (value: unknown): value is TargetAudience =>
   value === "parent" || value === "enfant" || value === "tous";
