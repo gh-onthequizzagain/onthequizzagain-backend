@@ -71,7 +71,7 @@ next();
 ### 2.3 `src/types/express.d.ts`
 
 Ajout de la propriété `user` sur l'objet `Request` d'Express (en plus de
-`token`), via `declare global` pour que l'augmentation soit bien prise en compte.
+`token`), via `declare global`
 
 ```ts
 import type { UserDocument } from "../models/User";
