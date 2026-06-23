@@ -34,3 +34,4 @@ Express 5 + TypeScript backend for a quiz app. Entry point is `src/server.ts`.
 | Variable | Required | Purpose |
 |---|---|---|
 | `URI_BD` | When using MongoDB | MongoDB connection string (without db name) |
+| `OPENROUTER_API_KEY` | For `/ia/question` route | API key from openrouter.ai |
