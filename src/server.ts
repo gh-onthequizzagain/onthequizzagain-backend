@@ -23,8 +23,8 @@ app.use(cors());
 
 //routes
 app.use(authRouter);
-app.use("/api/questions", questionRouter);
-app.use("/api/sessions", sessionRouter);
+app.use("/questions", questionRouter);
+app.use("/sessions", sessionRouter);
 app.use(defaultRouter);
 
 //Error : on gère les erreurs de maniere global
