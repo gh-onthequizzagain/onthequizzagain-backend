@@ -3,15 +3,16 @@ import express from "express";
 import cors from "cors";
 
 import defaultRouter from "./routes/default";
+import authRouter from "./routes/authRoutes";
 
 import { PORT_SERVER } from "./constants";
 import { logInfo } from "./helpers/log";
 
 import errorHandler from "./middlewares/error";
-//import { connectDB } from "./config/db";
+import { connectDB } from "./config/db";
 
 // mongoDb init
-//connectDB("name_bdd");
+connectDB("onthequizzagain");
 
 // express init
 const app = express();
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use(cors());
 
 //routes
+app.use(authRouter);
 app.use(defaultRouter);
 
 //Error : on gère les erreurs de maniere global
