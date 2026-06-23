@@ -9,12 +9,12 @@ const UserSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-    account: {
-      username: {
-        type: String,
-        required: true,
-      },
+
+    username: {
+      type: String,
+      required: true,
     },
+
     token: {
       type: String,
       required: true,
@@ -31,6 +31,8 @@ const UserSchema = new Schema(
   { timestamps: true },
 );
 
-export type UserType = InferSchemaType<typeof UserSchema> & { _id?: Types.ObjectId };
+export type UserType = InferSchemaType<typeof UserSchema> & {
+  _id?: Types.ObjectId;
+};
 
 export default model<UserType>("User", UserSchema);
