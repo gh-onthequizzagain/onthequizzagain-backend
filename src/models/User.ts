@@ -1,4 +1,10 @@
-import { Schema, model, InferSchemaType, type Types } from "mongoose";
+import {
+  Schema,
+  model,
+  InferSchemaType,
+  type HydratedDocument,
+  type Types,
+} from "mongoose";
 
 const UserSchema = new Schema(
   {
@@ -35,4 +41,8 @@ export type UserType = InferSchemaType<typeof UserSchema> & {
   _id?: Types.ObjectId;
 };
 
-export default model<UserType>("User", UserSchema);
+export type UserDocument = HydratedDocument<UserType>;
+
+export const UserModel = model<UserType>("User", UserSchema);
+
+export default UserModel;

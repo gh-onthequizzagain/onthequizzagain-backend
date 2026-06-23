@@ -31,3 +31,14 @@ export const isEmail = (value: unknown): value is string => {
 
   return /^[a-z0-9_.-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(value);
 };
+
+export const isLatitude = (value: unknown): value is number =>
+  isNumber(value) && value >= -90 && value <= 90;
+
+export const isLongitude = (value: unknown): value is number =>
+  isNumber(value) && value >= -180 && value <= 180;
+
+export type PublicCible = "parent" | "enfant" | "tous";
+
+export const isPublicCible = (value: unknown): value is PublicCible =>
+  value === "parent" || value === "enfant" || value === "tous";

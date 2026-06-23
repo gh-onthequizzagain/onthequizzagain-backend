@@ -41,5 +41,7 @@ export const isAuthenticated = async (
   }
 
   (req as AuthRequest).user = user;
+  // On expose aussi le token brut pour les handlers qui le lisent via req.token.
+  req.token = token;
   next();
 };
