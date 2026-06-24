@@ -1,10 +1,12 @@
 import axios from "axios";
 import { HttpError } from "../middlewares/error";
+import type { AudienceType } from "../types/types";
 
 export type IAQuestion = {
   poi: string;
   distanceKm: number;
   theme: string;
+  audience: AudienceType;
   question: string;
   choices: string[];
   answer: string;
@@ -46,15 +48,40 @@ const pickRandomTheme = (): string => {
   return keys[Math.floor(Math.random() * keys.length)] as string;
 };
 
+const AUDIENCE_PROFILES: Record<AudienceType, string> = {
+  enfants: `
+- Public : enfants de 8 à 13 ans
+- Difficulté : FACILE — vocabulaire simple, question courte et directe
+- Thèmes favoris : nature, animaux, gastronomie, sport, géographie simple, personnages célèbres accessibles
+- INTERDIRE : sujets politiques, guerres, violence, thèmes morbides
+- Distracteurs : clairement distincts de la bonne réponse, pas piégeux
+- Anecdote : amusante, imagée, surprenante pour un enfant`,
+  adolescents: `
+- Public : adolescents de 14 à 17 ans
+- Difficulté : INTERMÉDIAIRE — vocabulaire courant, peut inclure des références contemporaines
+- Thèmes favoris : sport, sciences, culture générale, géographie, personnages célèbres, art
+- Distracteurs : plausibles mais pas trop piégeux
+- Anecdote : intéressante, peut inclure un aspect "insolite" ou "record"`,
+  adultes: `
+- Public : adultes (18 ans et plus)
+- Difficulté : INTERMÉDIAIRE À ÉLEVÉE — vocabulaire sans restriction, questions précises
+- Tous les thèmes disponibles
+- Peut inclure : dates précises, étymologies, détails historiques, noms complets
+- Distracteurs : crédibles et proches de la bonne réponse
+- Anecdote : culturellement riche, peut faire référence à des faits peu connus`,
+};
+
 export const fetchIAQuestion = async (
   latitude: number,
   longitude: number,
+  audience: AudienceType,
 ): Promise<IAQuestion> => {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new HttpError("Missing OPENROUTER_API_KEY", 500);
 
   const theme = pickRandomTheme();
   const themeDescription = THEMES[theme];
+  const audienceProfile = AUDIENCE_PROFILES[audience];
 
   const prompt = `Tu es un concepteur expert de questions pour un jeu de culture générale de type Trivial Pursuit,
 destiné à des passagers en voiture qui traversent une région.
@@ -73,9 +100,12 @@ INTERDIT de basculer sur le thème "histoire" sauf si le fait historique est le 
 ## Processus interne (ne pas inclure dans la réponse JSON)
 Étape 1 — Identifie la commune ou le lieu principal le plus proche des coordonnées (dans les 20 km).
 Étape 2 — Trouve un fait précis et vérifiable relevant du thème imposé, lié à ce lieu.
-Étape 3 — Vérifie mentalement ce fait sur Wikipédia (fr.wikipedia.org) ou la page officielle du lieu.
+Étape 3 — Vérifie mentalement ce fait sur Wikipédia (fr.wikipedia.org), wikidata (https://www.wikidata.org/wiki/Wikidata:Main_Page?uselang=fr) ou la page officielle du lieu.
 Étape 4 — Si ta confiance est inférieure à 85 %, choisis un autre sujet dans le rayon de 20 km.
 Étape 5 — Génère la question uniquement si tu peux citer une source réelle.
+
+## Adaptation au public
+${audienceProfile}
 
 ## Règles de contenu
 - La question NE DOIT PAS être "Quel lieu se trouve à X km de ces coordonnées ?"
@@ -87,7 +117,6 @@ INTERDIT de basculer sur le thème "histoire" sauf si le fait historique est le 
     ✅ art        : "Quel peintre impressionniste est né à X ?"
     ✅ géographie : "Quel est le point culminant du massif de X ?"
     ✅ sciences   : "Quelle invention fut brevetée à X par quel ingénieur ?"
-- Difficulté : intermédiaire (ni trop facile, ni encyclopédique)
 - Langue : français
 
 ## Règles pour les choix
@@ -102,6 +131,7 @@ Réponds UNIQUEMENT avec ce JSON, sans texte avant ni après, sans balises markd
   "poi": "Nom exact du lieu ou sujet de la question",
   "distanceKm": 12,
   "theme": "${theme}",
+  "audience": "${audience}",
   "question": "...",
   "choices": ["...", "...", "...", "..."],
   "answer": "...",
@@ -114,17 +144,19 @@ Réponds UNIQUEMENT avec ce JSON, sans texte avant ni après, sans balises markd
 - poi : commune ou lieu précis dans le rayon de 20 km
 - distanceKm : distance approximative en km (doit être ≤ 20)
 - theme : "${theme}" (valeur fixe, ne pas modifier)
+- audience : "${audience}" (valeur fixe, ne pas modifier)
 - question : la question posée au joueur
 - choices : tableau de 4 réponses RÉELLES, la bonne réponse mélangée parmi les autres
 - answer : la bonne réponse (doit correspondre exactement à l'un des éléments de choices)
 - anecdote : 2-3 phrases surprenantes sur le sujet, différentes de la question, à afficher après la réponse
-- source : URL Wikipédia (fr.wikipedia.org) ou page officielle ayant permis de vérifier le fait
+- source : URL Wikipédia (fr.wikipedia.org), wikidata (https://www.wikidata.org/wiki/Wikidata:Main_Page?uselang=fr) ou page officielle ayant permis de vérifier le fait
 - confidence : ton niveau de certitude sur la réponse correcte, entre 0 et 100`;
 
   const response = await axios.post<OpenRouterResponse>(
     "https://openrouter.ai/api/v1/chat/completions",
     {
       model: "openai/gpt-oss-120b:free",
+      // model: "openrouter/owl-alpha",
       messages: [{ role: "user", content: prompt }],
     },
     {

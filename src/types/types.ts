@@ -7,3 +7,5 @@ export type MongoId = {
   _id: Types.ObjectId;
 };
 
+export type AudienceType = "enfants" | "adolescents" | "adultes";
+

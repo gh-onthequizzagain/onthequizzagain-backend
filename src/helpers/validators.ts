@@ -1,5 +1,10 @@
+import type { AudienceType } from "../types/types";
+
 export const isString = (str: unknown): str is string =>
   typeof str === "string";
+
+export const isAudienceType = (value: unknown): value is AudienceType =>
+  value === "enfants" || value === "adolescents" || value === "adultes";
 
 export const isNumber = (value: unknown): value is number =>
   typeof value === "number" && !Number.isNaN(value);
