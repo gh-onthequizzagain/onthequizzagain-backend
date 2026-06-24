@@ -46,8 +46,6 @@ routes/ → controllers/ → services/ → models/
 
 ## Environment variables
 
-| Variable | Required | Purpose |
-|---|---|---|
-| `URI_BD` | Yes | MongoDB connection string base (db name is appended) |
-
-Loaded via `dotenv/config` from a `.env` file (gitignored).
+| Variable | Required | Purpose                                              |
+| -------- | -------- | ---------------------------------------------------- |
+| `URI_BD` | Yes      | MongoDB connection string base (db name is appended) |

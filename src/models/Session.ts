@@ -2,7 +2,7 @@ import { Schema, model, InferSchemaType, HydratedDocument } from "mongoose";
 
 /**
  * Une réponse donnée par le joueur à une question pendant une partie.
- * `isCorrect` est calculée côté serveur (le client n'a jamais la bonne réponse).
+ * `correct` est calculée côté serveur (le client n'a jamais la bonne réponse).
  */
 const reponseSchema = new Schema(
   {
@@ -24,7 +24,7 @@ const reponseSchema = new Schema(
 const sessionSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    RouteName: { type: String, default: "" },
+    routeName: { type: String, default: "" },
     startDate: { type: Date, default: Date.now },
     endDate: { type: Date },
     answeredQuestions: { type: [reponseSchema], default: [] },
