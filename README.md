@@ -60,7 +60,7 @@ contrôles doivent être faits dans le service.
 
 ---
 
-## Point 2 (partiel) : routes de lecture
+## Point 2 : routes de lecture
 
 Fichiers modifiés : `src/services/sessionService.ts`,
 `src/controllers/sessionController.ts`, `src/routes/sessionRoutes.ts`
