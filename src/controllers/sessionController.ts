@@ -28,16 +28,17 @@ export const createSessionController = async (req: Request, res: Response) => {
 /**
  * PATCH /api/sessions/:id
  * - Enregistre une réponse : body { questionId, responseGiven }
- * - OU termine la partie : body { termine: true }
+ * - OU termine la partie : body { finished: true }
  */
 export const updateSessionController = async (req: Request, res: Response) => {
   const { user } = req as AuthRequest;
   const { id } = req.params;
-  if (!isMongoId(id)) throw new HttpError("Identifiant de session invalide", 400);
+  if (!isMongoId(id))
+    throw new HttpError("Identifiant de session invalide", 400);
 
-  const { questionId, responseGiven, termine } = req.body;
+  const { questionId, responseGiven, finished } = req.body;
 
-  if (termine === true) {
+  if (finished === true) {
     const session = await sessionService.endSession(id, user._id);
     res.status(200).json(session);
     return;
@@ -66,7 +67,8 @@ export const updateSessionController = async (req: Request, res: Response) => {
 export const historyController = async (req: Request, res: Response) => {
   const { user } = req as AuthRequest;
   const { id } = req.params;
-  if (!isMongoId(id)) throw new HttpError("Identifiant de session invalide", 400);
+  if (!isMongoId(id))
+    throw new HttpError("Identifiant de session invalide", 400);
 
   const session = await sessionService.getHistory(id, user._id);
   res.status(200).json(session);
