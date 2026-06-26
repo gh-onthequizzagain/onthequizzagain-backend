@@ -2,6 +2,8 @@ import axios from "axios";
 import { HttpError } from "../middlewares/error";
 import type { AudienceType } from "../types/types";
 
+export type QuestionType = "QCM" | "vraifaux";
+
 export type IAQuestion = {
   poi: string;
   distanceKm: number;
@@ -74,6 +76,7 @@ const AUDIENCE_PROFILES: Record<AudienceType, string> = {
 export const fetchIAQuestion = async (
   latitude: number,
   longitude: number,
+  type: QuestionType,
   audience: AudienceType,
 ): Promise<IAQuestion> => {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -90,6 +93,12 @@ destiné à des passagers en voiture qui traversent une région.
 Coordonnées GPS du véhicule : ${latitude}, ${longitude}
 Rayon STRICT : exactement 20 km autour de ces coordonnées. Ne dépasse JAMAIS ce périmètre.
 Convertis ces coordonnées en région/département français pour identifier les communes proches.
+
+## ⚠️ TYPE DE QUESTION — INSTRUCTION PRIORITAIRE
+Le type imposé pour cette question est : **${type}**
+Tu DOIS générer EXCLUSIVEMENT ce type. Ne génère PAS un QCM si le type est "vraifaux", et inversement.
+- Si type = "QCM" → applique les règles QCM (4 choix réels, 1 bonne réponse mélangée parmi 3 distracteurs)
+- Si type = "vraifaux" → applique les règles Vrai ou Faux (2 choix uniquement : "Vrai" et "Faux")
 
 ## Thème imposé pour cette question
 Thème obligatoire : **${theme}**
@@ -119,35 +128,61 @@ ${audienceProfile}
     ✅ sciences   : "Quelle invention fut brevetée à X par quel ingénieur ?"
 - Langue : français
 
-## Règles pour les choix
+## Règles pour les choix des questions type QCM.
 - 4 choix au total : 1 bonne réponse + 3 distracteurs plausibles
 - Les distracteurs DOIVENT être des éléments RÉELS (vrais noms, vraies dates, vrais lieux) — jamais inventés
 - Les distracteurs doivent être crédibles : même époque, même catégorie, même région
 - Mélange aléatoirement la position de la bonne réponse dans le tableau choices
 
+## Règles pour les types de question Vrai ou Faux.
+- Proposer une question qui n'attend comme réponse QUE 2 CHOIX VRAI OU FAUX et rien d'autre.
+- Exemple de questions pour les vrais ou faux :
+    ✅ sport      : "Le club de l'AJ Auxerre a déjà remporté la ligue des champions ?" -> Faux
+    ✅ gastronomie: "Les rillettes de Tours sont faites à base poulet ?" -> Faux
+    ✅ art        : "Leonard de Vinci a peint la Joconde ?" -> Vrai
+    ✅ géographie : "Marseille est dans le département du Gard ?" -> Faux
+    ✅ sciences   : " Dans la formule E=mc2, c représente la vitesse de la lumière.?" -> Vrai
+
 ## Format de réponse
-Réponds UNIQUEMENT avec ce JSON, sans texte avant ni après, sans balises markdown :
+Réponds UNIQUEMENT avec ce JSON, sans texte avant ni après, sans balises markdown.
+
+${type === "QCM" ? `Le type est QCM → choices doit contenir EXACTEMENT 4 éléments réels :
 {
   "poi": "Nom exact du lieu ou sujet de la question",
   "distanceKm": 12,
   "theme": "${theme}",
   "audience": "${audience}",
+  "type": "QCM",
   "question": "...",
-  "choices": ["...", "...", "...", "..."],
-  "answer": "...",
+  "choices": ["choix A", "choix B", "choix C", "choix D"],
+  "answer": "la bonne réponse (identique à l'un des 4 choix)",
   "anecdote": "...",
   "source": "https://fr.wikipedia.org/wiki/...",
   "confidence": 92
-}
+}` : `Le type est vraifaux → choices doit contenir EXACTEMENT 2 éléments ["Vrai", "Faux"] et rien d'autre :
+{
+  "poi": "Nom exact du lieu ou sujet de la question",
+  "distanceKm": 12,
+  "theme": "${theme}",
+  "audience": "${audience}",
+  "type": "vraifaux",
+  "question": "...",
+  "choices": ["Vrai", "Faux"],
+  "answer": "Vrai ou Faux (un seul mot, identique à l'un des 2 choix)",
+  "anecdote": "...",
+  "source": "https://fr.wikipedia.org/wiki/...",
+  "confidence": 92
+}`}
 
 ## Détail des champs
 - poi : commune ou lieu précis dans le rayon de 20 km
 - distanceKm : distance approximative en km (doit être ≤ 20)
 - theme : "${theme}" (valeur fixe, ne pas modifier)
 - audience : "${audience}" (valeur fixe, ne pas modifier)
+- type : "${type}" (valeur fixe, ne pas modifier)
 - question : la question posée au joueur
-- choices : tableau de 4 réponses RÉELLES, la bonne réponse mélangée parmi les autres
-- answer : la bonne réponse (doit correspondre exactement à l'un des éléments de choices)
+- choices : ${type === "QCM" ? "tableau de 4 réponses RÉELLES, la bonne réponse mélangée parmi les autres" : 'tableau de 2 éléments UNIQUEMENT : ["Vrai", "Faux"]'}
+- answer : ${type === "QCM" ? "la bonne réponse (doit correspondre exactement à l'un des éléments de choices)" : '"Vrai" ou "Faux" (doit correspondre exactement à l\'un des 2 éléments de choices)'}
 - anecdote : 2-3 phrases surprenantes sur le sujet, différentes de la question, à afficher après la réponse
 - source : URL Wikipédia (fr.wikipedia.org), wikidata (https://www.wikidata.org/wiki/Wikidata:Main_Page?uselang=fr) ou page officielle ayant permis de vérifier le fait
 - confidence : ton niveau de certitude sur la réponse correcte, entre 0 et 100`;
