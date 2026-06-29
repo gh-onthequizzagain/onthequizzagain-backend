@@ -44,3 +44,28 @@ export const getProfile = async (token: string): Promise<PublicUser> => {
 
   return { _id: user._id, email: user.email, username: user.username, token: user.token };
 };
+
+export const modifyProfile = async (
+  token: string,
+  fields: { username?: string; email?: string },
+): Promise<PublicUser> => {
+  const user = await User.findOne({ token });
+  if (!user) throw new HttpError("Unauthorized", 401);
+
+  if (fields.email !== undefined) {
+    const existing = await User.findOne({ email: fields.email });
+    if (existing && !existing._id?.equals(user._id)) {
+      throw new HttpError("Email already in use", 409);
+    }
+  }
+
+  const updated = await User.findOneAndUpdate({ token }, fields, { new: true });
+  if (!updated) throw new HttpError("Unauthorized", 401);
+
+  return {
+    _id: updated._id,
+    email: updated.email,
+    username: updated.username,
+    token: updated.token,
+  };
+};

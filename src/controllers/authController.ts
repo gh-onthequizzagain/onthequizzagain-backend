@@ -33,3 +33,23 @@ export const profileController = async (req: Request, res: Response) => {
   const user = await authService.getProfile(token);
   res.status(200).json(user);
 };
+
+export const modifyProfileController = async (req: Request, res: Response) => {
+  const { token } = req;
+  if (!token) throw new HttpError("Unauthorized", 401);
+
+  const { username, email } = req.body;
+
+  if (!isString(username) && !isEmail(email)) {
+    throw new HttpError("Missing or invalid fields", 400);
+  }
+
+  const fields: { username?: string; email?: string } = {};
+  if (isString(username)) fields.username = username;
+  if (isEmail(email)) fields.email = email;
+
+  const user = await authService.modifyProfile(token, fields);
+  res.status(200).json(user);
+};
+
+export const passwordController = async (req: Request, res: Response) => {};
