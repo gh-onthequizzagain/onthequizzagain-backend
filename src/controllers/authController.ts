@@ -40,13 +40,16 @@ export const modifyProfileController = async (req: Request, res: Response) => {
 
   const { username, email } = req.body;
 
-  if (!isString(username) && !isEmail(email)) {
+  const usernameValid = isString(username) && username.trim().length > 0;
+  const emailValid = isEmail(email);
+
+  if (!usernameValid && !emailValid) {
     throw new HttpError("Missing or invalid fields", 400);
   }
 
   const fields: { username?: string; email?: string } = {};
-  if (isString(username)) fields.username = username;
-  if (isEmail(email)) fields.email = email;
+  if (usernameValid) fields.username = username;
+  if (emailValid) fields.email = email;
 
   const user = await authService.modifyProfile(token, fields);
   res.status(200).json(user);

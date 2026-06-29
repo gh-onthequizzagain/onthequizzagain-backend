@@ -54,20 +54,32 @@ export const modifyProfile = async (
 
   if (fields.email !== undefined) {
     const existing = await User.findOne({ email: fields.email });
-    if (existing && !existing._id?.equals(user._id)) {
+    if (existing && existing._id?.toString() !== user._id?.toString()) {
       throw new HttpError("Email already in use", 409);
     }
   }
 
-  const updated = await User.findOneAndUpdate({ token }, fields, { new: true });
-  if (!updated) throw new HttpError("Unauthorized", 401);
+  try {
+    const updated = await User.findOneAndUpdate({ token }, fields, { new: true });
+    if (!updated) throw new HttpError("Unauthorized", 401);
 
-  return {
-    _id: updated._id,
-    email: updated.email,
-    username: updated.username,
-    token: updated.token,
-  };
+    return {
+      _id: updated._id,
+      email: updated.email,
+      username: updated.username,
+      token: updated.token,
+    };
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: unknown }).code === 11000
+    ) {
+      throw new HttpError("Email already in use", 409);
+    }
+    throw error;
+  }
 };
 
 export const changePassword = async (
