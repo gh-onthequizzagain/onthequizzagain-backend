@@ -1,0 +1,1217 @@
+Skip to content
+gh-onthequizzagain
+onthequizzagain-app
+Repository navigation
+Code
+Issues
+Pull requests
+1
+ (1)
+Agents
+Actions
+Projects
+Wiki
+Security and quality
+Insights
+Settings
+Feature/create slices
+#25
+Draft
+mathieujullien77190
+wants to merge 4 commits into
+main
+from
+feature/create-slices
++882
+-16
+Lines changed: 882 additions & 16 deletions
+Conversation0 (0)
+Commits4 (4)
+Checks0 (0)
+Files changed20 (20)
+Pull request toolbar
+Draft
+Feature/create slices
+#25
+mathieujullien77190
+wants to merge 4 commits into
+main
+from
+feature/create-slices
+0 / 20 viewed
+0 of 20 files viewed
+Filter files…
+File tree
+src
+components
+ErrorInfo.tsx
+TestSession.tsx
+UserInfo.tsx
+contexts
+session
+constants.ts
+sessionSlice.ts
+types.ts
+user
+types.ts
+userSlice.ts
+AppContext.ts
+AppProvider.tsx
+types.ts
+helpers
+user.ts
+services
+fetch.ts
+getTestError.ts
+postLogin.ts
+constants.ts
+App.tsx
+package.json
+README.md
+yarn.lock
+‎src/components/ErrorInfo.tsx‎
++36
+Lines changed: 36 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { getTestError } from "@/services/getTestError";
+type AppError = { message: string; code: number };
+export const ErrorInfo = () => {
+  const [error, setError] = useState<AppError | null>(null);
+  useEffect(() => {
+    getTestError().catch((err: AppError) => setError(err));
+  }, []);
+  if (!error) return null;
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>ErrorInfo</Text>
+      <Text>Message : {error.message}</Text>
+      <Text>Code : {error.code}</Text>
+    </View>
+  );
+};
+const styles = StyleSheet.create({
+  container: {
+    borderWidth: 1,
+    borderColor: "#000",
+    padding: 8,
+    marginBottom: 8,
+  },
+  title: {
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+});
+‎src/components/TestSession.tsx‎
++57
+Lines changed: 57 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { useEffect } from "react";
+import { ScrollView, Text, View, StyleSheet } from "react-native";
+import { useSession, useUser } from "@/contexts/AppContext";
+import { QuestionMode, QuestionStatus } from "@/contexts/session/types";
+export const TestSession = () => {
+  const session = useSession();
+  const user = useUser();
+  useEffect(() => {
+    if (user.data) session.createSession(user.data);
+  }, [user.data]);
+  useEffect(() => {
+    if (session.data) {
+      session.addQuestion({
+        _id: "q1",
+        photo: "https://example.com/photo.jpg",
+        locationTitle: "Tour Eiffel",
+        locationDistance: 120,
+        question: "Dans quelle ville se trouve ce monument ?",
+        answers: [
+          { id: "a1", text: "Paris" },
+          { id: "a2", text: "Londres" },
+          { id: "a3", text: "Berlin" },
+        ],
+        solutionId: "a1",
+        type: QuestionMode.MultipleChoice,
+        playerId: "player1",
+        status: QuestionStatus.Pending,
+        coordinate: { lat: 48.8584, lon: 2.2945 },
+      });
+    }
+  }, [!!session.data]);
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>TestSession</Text>
+      <ScrollView>
+        <Text>{JSON.stringify(session.data, null, 2)}</Text>
+      </ScrollView>
+    </View>
+  );
+};
+const styles = StyleSheet.create({
+  container: {
+    borderWidth: 1,
+    borderColor: "#000",
+    padding: 8,
+    marginBottom: 8,
+  },
+  title: {
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+});
+‎src/components/UserInfo.tsx‎
++40
+Lines changed: 40 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { useEffect } from "react";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { useUser } from "@/contexts/AppContext";
+import { postLogin } from "@/services/postLogin";
+export const UserInfo = () => {
+  const user = useUser();
+  useEffect(() => {
+    postLogin({ email: "", password: "" }).then((data) => {
+      user.login(data);
+    });
+  }, []);
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>UserInfo</Text>
+      {!user.data ? (
+        <Text>Non connecté</Text>
+      ) : (
+        <ScrollView>
+          <Text>{JSON.stringify(user.data, null, 2)}</Text>
+        </ScrollView>
+      )}
+    </View>
+  );
+};
+const styles = StyleSheet.create({
+  container: {
+    borderWidth: 1,
+    borderColor: "#000",
+    padding: 8,
+    marginBottom: 8,
+  },
+  title: {
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+});
+‎src/contexts/session/constants.ts‎
++15
+Lines changed: 15 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { SessionData, GameScreen, GameDifficulty, FrequencyType, QuestionMode } from "./types";
+export const MAX_STEP = 3;
+export const DEFAULT_SESSION: Omit<SessionData, "players"> = {
+  screen: GameScreen.Preparation,
+  stepIndex: 1,
+  title: "",
+  frequency: { type: FrequencyType.Time, value: 300 },
+  difficulty: GameDifficulty.Medium,
+  questionModes: [QuestionMode.MultipleChoice, QuestionMode.TrueFalse, QuestionMode.Text],
+  isFreeAnswer: false,
+  hasNotification: true,
+  questions: [],
+};
+‎src/contexts/session/sessionSlice.ts‎
++83
+Lines changed: 83 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { useState } from "react";
+import { User } from "@/contexts/user/types";
+import {
+  SessionData,
+  SessionSlice,
+  GameScreen,
+  GameDifficulty,
+  Frequency,
+  QuestionMode,
+  Question,
+  QuestionStatus,
+} from "./types";
+import { DEFAULT_SESSION, MAX_STEP } from "./constants";
+export const useSessionSlice = (): SessionSlice => {
+  const [data, setData] = useState<SessionData | null>(null);
+  const patch = (partial: Partial<SessionData>) =>
+    setData((prev) => (prev ? { ...prev, ...partial } : prev));
+  const createSession = (user: User) =>
+    setData({
+      ...DEFAULT_SESSION,
+      players: [{ name: user.username, isMainUser: true }],
+    });
+  const nextStep = () =>
+    setData((prev) =>
+      prev && prev.stepIndex < MAX_STEP
+        ? { ...prev, stepIndex: prev.stepIndex + 1 }
+        : prev,
+    );
+  const prevStep = () =>
+    setData((prev) =>
+      prev && prev.stepIndex > 1
+        ? { ...prev, stepIndex: prev.stepIndex - 1 }
+        : prev,
+    );
+  const reset = () => setData({ ...DEFAULT_SESSION, players: [] });
+  const setScreen = (screen: GameScreen) => patch({ screen });
+  const setTitle = (title: string) => patch({ title });
+  const setFrequency = (frequency: Frequency) => patch({ frequency });
+  const setDifficulty = (difficulty: GameDifficulty) => patch({ difficulty });
+  const setQuestionModes = (questionModes: QuestionMode[]) =>
+    patch({ questionModes });
+  const setIsFreeAnswer = (isFreeAnswer: boolean) => patch({ isFreeAnswer });
+  const setHasNotification = (hasNotification: boolean) =>
+    patch({ hasNotification });
+  const addQuestion = (question: Question) =>
+    setData((prev) =>
+      prev ? { ...prev, questions: [...prev.questions, question] } : prev,
+    );
+  const updateQuestionStatus = (id: string, status: QuestionStatus) =>
+    setData((prev) => {
+      if (!prev) return prev;
+      const questions = prev.questions.map((q) =>
+        q._id === id ? { ...q, status } : q,
+      );
+      return { ...prev, questions };
+    });
+  return {
+    data,
+    createSession,
+    setScreen,
+    setTitle,
+    setFrequency,
+    setDifficulty,
+    setQuestionModes,
+    setIsFreeAnswer,
+    setHasNotification,
+    addQuestion,
+    updateQuestionStatus,
+    nextStep,
+    prevStep,
+    reset,
+  };
+};
+‎src/contexts/session/types.ts‎
++94
+Lines changed: 94 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { User } from "@/contexts/user/types";
+export enum GameScreen {
+  Preparation = "preparation",
+  InGame = "inGame",
+  Finish = "finish",
+}
+export enum FrequencyType {
+  Distance = "distance",
+  Time = "time",
+}
+export enum GameDifficulty {
+  Easy = "easy",
+  Medium = "medium",
+  Hard = "hard",
+}
+export enum QuestionMode {
+  MultipleChoice = "multipleChoice",
+  TrueFalse = "trueFalse",
+  Text = "text",
+}
+export enum QuestionStatus {
+  Pending = "pending",
+  CorrectlyFound = "correctlyFound",
+  IncorrectlyFound = "incorrectlyFound",
+}
+export type Location = {
+  lon: number;
+  lat: number;
+};
+export type Answer = {
+  id: string;
+  text: string;
+};
+export type Question = {
+  _id: string;
+  photo: string;
+  locationTitle: string;
+  locationDistance: number;
+  question: string;
+  answers: Answer[];
+  solutionId: string;
+  type: QuestionMode;
+  playerId: string;
+  status: QuestionStatus;
+  coordinate: Location;
+};
+export type SessionPlayer = {
+  name: string;
+  isMainUser: boolean;
+};
+export type Frequency = {
+  type: FrequencyType;
+  value: number;
+};
+export type SessionData = {
+  players: SessionPlayer[];
+  screen: GameScreen;
+  stepIndex: number;
+  title: string;
+  frequency: Frequency;
+  difficulty: GameDifficulty;
+  questionModes: QuestionMode[];
+  isFreeAnswer: boolean;
+  hasNotification: boolean;
+  questions: Question[];
+};
+export type SessionSlice = {
+  data: SessionData | null;
+  createSession: (user: User) => void;
+  setScreen: (screen: GameScreen) => void;
+  setTitle: (title: string) => void;
+  setFrequency: (frequency: Frequency) => void;
+  setDifficulty: (difficulty: GameDifficulty) => void;
+  setQuestionModes: (modes: QuestionMode[]) => void;
+  setIsFreeAnswer: (value: boolean) => void;
+  setHasNotification: (value: boolean) => void;
+  addQuestion: (question: Question) => void;
+  updateQuestionStatus: (id: string, status: QuestionStatus) => void;
+  nextStep: () => void;
+  prevStep: () => void;
+  reset: () => void;
+};
+‎src/contexts/user/types.ts‎
++42
+Lines changed: 42 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+export type TripRecord = {
+  _id: string;
+  title: string;
+  date: string;
+  questionsCount: number;
+  winner: string;
+  score: number;
+};
+export type Badge = {
+  _id: string;
+  label: string;
+  description?: string;
+  icon: string;
+  unlocked: boolean;
+};
+export type History = {
+  totalTrips: number;
+  totalQuestions: number;
+  totalKm: number;
+  trips: TripRecord[];
+};
+export type Badges = {
+  items: Badge[];
+};
+export type User = {
+  _id: string;
+  username: string;
+  email: string;
+  history: History;
+  badges: Badges;
+};
+export type UserSlice = {
+  data: User | null;
+  login: (user: User) => void;
+  logout: () => void;
+  addTrip: (trip: TripRecord) => void;
+};
+‎src/contexts/user/userSlice.ts‎
++26
+Lines changed: 26 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { useState } from "react";
+import { User, UserSlice, TripRecord } from "./types";
+export const useUserSlice = (): UserSlice => {
+  const [data, setData] = useState<User | null>(null);
+  const login = (user: User) => setData(user);
+  const logout = () => setData(null);
+  const addTrip = (trip: TripRecord) =>
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            history: {
+              ...prev.history,
+              totalTrips: prev.history.totalTrips + 1,
+              totalQuestions: prev.history.totalQuestions + trip.questionsCount,
+              trips: [...prev.history.trips, trip],
+            },
+          }
+        : prev,
+    );
+  return { data, login, logout, addTrip };
+};
+‎src/contexts/AppContext.ts‎
++13
+Lines changed: 13 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { createContext, useContext } from "react";
+import { AppContextType } from "./types";
+export const AppContext = createContext<AppContextType | null>(null);
+const useAppContext = () => {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error("Must be used inside AppProvider");
+  return ctx;
+};
+export const useUser = () => useAppContext().user;
+export const useSession = () => useAppContext().session;
+‎src/contexts/AppProvider.tsx‎
++15
+Lines changed: 15 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { ReactNode } from "react";
+import { AppContext } from "./AppContext";
+import { useUserSlice } from "./user/userSlice";
+import { useSessionSlice } from "./session/sessionSlice";
+export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const user = useUserSlice();
+  const session = useSessionSlice();
+  return (
+    <AppContext.Provider value={{ user, session }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+‎src/contexts/types.ts‎
++7
+Lines changed: 7 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import { SessionSlice } from "./session/types";
+import { UserSlice } from "./user/types";
+export type AppContextType = {
+  user: UserSlice;
+  session: SessionSlice;
+};
+‎src/helpers/user.ts‎
++5
+Lines changed: 5 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import Cookies from "js-cookie";
+export const getToken = (): string | undefined => Cookies.get("token");
+export const setToken = (token: string): void => { Cookies.set("token", token); };
+export const clearToken = (): void => { Cookies.remove("token"); };
+‎src/services/fetch.ts‎
++26
+Lines changed: 26 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+import axios from "axios";
+import { getToken } from "@/helpers/user";
+import { BASE_PATH_API } from "@/constants";
+// instance axios partagée avec l'URL de base de l'API
+export const api = axios.create({
+  baseURL: BASE_PATH_API,
+});
+// avant chaque requête : on injecte le token dans le header si présent
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+api.interceptors.response.use(
+  // on retourne directement response.data pour éviter le wrapper axios
+  (response) => response.data,
+  (error) => {
+    // on extrait le message d'erreur du serveur ou de axios
+    const message = error?.response?.data?.message ?? error.message;
+    console.error("API Error:", error);
+    return Promise.reject(new Error(message));
+  },
+);
+‎src/services/getTestError.ts‎
++8
+Lines changed: 8 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+//fichier a supprimer juste pour tester le catch des erreur
+type GetTestErrorResponse = { message: string; code: number };
+export const getTestError = (): Promise<GetTestErrorResponse> =>
+  new Promise((_, reject) =>
+    setTimeout(() => reject({ message: "Something went wrong", code: 500 }), 1),
+  );
+‎src/services/postLogin.ts‎
++74
+Lines changed: 74 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+// import { api } from "./fetch";
+import { User } from "@/contexts/user/types";
+type PostLoginRequest = { email: string; password: string };
+type PostLoginResponse = User;
+// export const postLogin = (body: PostLoginRequest) =>
+//   api.post<PostLoginResponse>("/login", body);
+//just for test without server
+export const postLogin = (
+  _body: PostLoginRequest,
+): Promise<PostLoginResponse> =>
+  new Promise((resolve) =>
+    setTimeout(
+      () =>
+        resolve({
+          _id: "user-1",
+          username: "Alice",
+          email: "alice@example.com",
+          history: {
+            totalTrips: 3,
+            totalQuestions: 42,
+            totalKm: 150,
+            trips: [
+              {
+                _id: "t1",
+                title: "Road trip sud",
+                date: "2025-06-01",
+                questionsCount: 15,
+                winner: "Alice",
+                score: 80,
+              },
+              {
+                _id: "t2",
+                title: "Weekend bretagne",
+                date: "2025-06-10",
+                questionsCount: 12,
+                winner: "Bob",
+                score: 60,
+              },
+              {
+                _id: "t3",
+                title: "Alpes été",
+                date: "2025-06-20",
+                questionsCount: 15,
+                winner: "Alice",
+                score: 90,
+              },
+            ],
+          },
+          badges: {
+            items: [
+              {
+                _id: "b1",
+                label: "First Trip",
+                description: "Completed your first trip",
+                icon: "🚗",
+                unlocked: true,
+              },
+              {
+                _id: "b2",
+                label: "Quiz Master",
+                description: "Won 3 quizzes in a row",
+                icon: "🏆",
+                unlocked: false,
+              },
+            ],
+          },
+        }),
+      1000,
+    ),
+  );
+‎src/constants.ts‎
++1
+Lines changed: 1 addition & 0 deletions
+Original file line number	Diff line number	Diff line change
+export const BASE_PATH_API = "http://localhost:3000";
+‎App.tsx‎
++15
+-9
+Lines changed: 15 additions & 9 deletions
+Original file line number	Diff line number	Diff line change
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, ScrollView } from "react-native";
+
+import { TestComponent } from "@/components/TestComponent";
+import { UserInfo } from "@/components/UserInfo";
+import { ErrorInfo } from "@/components/ErrorInfo";
+import { TestSession } from "@/components/TestSession";
+import { AppProvider } from "@/contexts/AppProvider";
+
+export default function App() {
+  return (
+    <View style={styles.container}>
+      <Text>Open up App.tsx to start working on your app!</Text>
+      <TestComponent />
+      <StatusBar style="auto" />
+    </View>
+    <AppProvider>
+      <ScrollView contentContainerStyle={styles.container}>
+        <TestComponent />
+        <UserInfo />
+        <ErrorInfo />
+        <TestSession />
+        <StatusBar style="auto" />
+      </ScrollView>
+    </AppProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
+‎package.json‎
++6
+-1
+Lines changed: 6 additions & 1 deletion
+
+
+Original file line number	Diff line number	Diff line change
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "axios": "^1.18.1",
+    "expo": "~54.0.34",
+    "expo-status-bar": "~3.0.9",
+    "js-cookie": "^3.0.8",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
+    "@types/react": "~19.1.0",
+    "module-resolver": "^1.0.0",
+    "typescript": "~5.9.2"
+‎README.md‎
++28
+Lines changed: 28 additions & 0 deletions
+
+
+Original file line number	Diff line number	Diff line change
+# OnTheQuizzAgain
+## Services (`src/services/`)
+Chaque fichier correspond à un appel API. La convention :
+- nom = méthode HTTP + ressource (`postLogin`, `getWelcome`…)
+- les types `Request` et `Response` sont définis en haut du fichier
+L'instance axios est configurée dans `src/services/fetch.ts` :
+- `baseURL` centralisée dans `src/constants.ts`
+- intercepteur request : injecte le token Bearer depuis les cookies (`js-cookie`)
+- intercepteur response : retourne directement `response.data`, gère les erreurs
+## Context (`src/contexts/`)
+Un seul context (`AppContext`) avec un seul provider (`AppProvider`). La logique est découpée en **slices** par domaine :
+- `src/contexts/user/userSlice.ts` → état et actions liés à l'utilisateur connecté (`login`, `logout`)
+- `src/contexts/player/playerSlice.ts` → liste de joueurs (`add`, `remove`)
+Les hooks d'accès sont exposés depuis `AppContext.ts` :
+- `useUser()` → `{ data, login, logout }`
+- `usePlayer()` → `{ data, add, remove }`
+Ajouter un nouveau domaine = créer un nouveau dossier avec un slice, brancher dans `AppProvider`.
+‎yarn.lock‎
++291
+-6
+Lines changed: 291 additions & 6 deletions
+
+
+Original file line number	Diff line number	Diff line change
+    "@babel/plugin-transform-modules-commonjs" "^7.29.7"
+    "@babel/plugin-transform-typescript" "^7.29.7"
+
+"@babel/runtime@^7.20.0", "@babel/runtime@^7.25.0":
+"@babel/runtime@^7.18.6", "@babel/runtime@^7.20.0", "@babel/runtime@^7.25.0":
+  version "7.29.7"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.29.7.tgz#12022450c45a4da6d8d8287b18a4ff2ddb23f768"
+  integrity sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==
+  resolved "https://registry.yarnpkg.com/@react-native/normalize-colors/-/normalize-colors-0.81.5.tgz#1ca6cb6772bb7324df2b11aab35227eacd6bdfe7"
+  integrity sha512-0HuJ8YtqlTVRXGZuGeBejLE04wSQsibpTI+RGOyVqxZvgtlLLC/Ssw0UmbHhT4lYMp2fhdtvKZSs5emWB1zR/g==
+
+"@react-native/normalize-colors@^0.74.1":
+  version "0.74.89"
+  resolved "https://registry.yarnpkg.com/@react-native/normalize-colors/-/normalize-colors-0.74.89.tgz#b8ac17d1bbccd3ef9a1f921665d04d42cff85976"
+  integrity sha512-qoMMXddVKVhZ8PA1AbUCk83trpd6N+1nF2A6k1i6LsQObyS92fELuk8kU/lQs6M7BsMHwqyLCpQJ1uFgNvIQXg==
+"@react-native/virtualized-lists@0.81.5":
+  version "0.81.5"
+  resolved "https://registry.yarnpkg.com/@react-native/virtualized-lists/-/virtualized-lists-0.81.5.tgz#24123fded16992d7e46ecc4ccd473be939ea8c1b"
+  dependencies:
+    "@types/istanbul-lib-report" "*"
+
+"@types/js-cookie@^3.0.6":
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/@types/js-cookie/-/js-cookie-3.0.6.tgz#a04ca19e877687bd449f5ad37d33b104b71fdf95"
+  integrity sha512-wkw9yd1kEXOPnvEeEV1Go1MmxtBJL0RR79aOTAApecWFVu7w0NNXNqhcWgvw2YgZDYadliXkl14pa3WXw5jlCQ==
+"@types/node@*":
+  version "26.0.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.0.0.tgz#d4aece9e9412e9f2008d59bc2d74f5279316b665"
+  resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.17.0.tgz#1785adb84faf8d8add10369b93826fc2bd08f1fe"
+  integrity sha512-xRQbDb9BnwDafYNn6Vwl839DYVjqXYb1XVGtWAZ1kcDc6iwAL4hg3B1dZlRiuENFeO2H53gFG3in621AdERVAg==
+
+agent-base@6:
+  version "6.0.2"
+  resolved "https://registry.yarnpkg.com/agent-base/-/agent-base-6.0.2.tgz#49fff58577cfee3f37176feab4c22e00f86d7f77"
+  integrity sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==
+  dependencies:
+    debug "4"
+agent-base@^7.1.2:
+  version "7.1.4"
+  resolved "https://registry.yarnpkg.com/agent-base/-/agent-base-7.1.4.tgz#e3cd76d4c548ee895d3c3fd8dc1f6c5b9032e7a8"
+  resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
+  integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
+
+asap@~2.0.6:
+asap@~2.0.3, asap@~2.0.6:
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/asap/-/asap-2.0.6.tgz#e50347611d7e690943208bbdafebcbc2fb866d46"
+  integrity sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==
+  resolved "https://registry.yarnpkg.com/async-limiter/-/async-limiter-1.0.1.tgz#dd379e94f0db8310b08291f9d64c3209766617fd"
+  integrity sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==
+
+asynckit@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
+  integrity sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==
+axios@^1.18.1:
+  version "1.18.1"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.18.1.tgz#d63f9863bcd8938815c86f9e2abd380189d96dfe"
+  integrity sha512-3nTvFlvpn9Zu/RkHUqtc7/+al4UpRW5az71ap5zccp6e8RAYEzhMTecX8Dz1wWDYrPpUoB1HAQEGEAEvUr7S9g==
+  dependencies:
+    follow-redirects "^1.16.0"
+    form-data "^4.0.5"
+    https-proxy-agent "^5.0.1"
+    proxy-from-env "^2.1.0"
+babel-jest@^29.7.0:
+  version "29.7.0"
+  resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-29.7.0.tgz#f4369919225b684c56085998ac63dbd05be020d5"
+  resolved "https://registry.yarnpkg.com/bytes/-/bytes-3.1.2.tgz#8b0beeb98605adf1b128fa4386403c009e0221a5"
+  integrity sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==
+
+call-bind-apply-helpers@^1.0.1, call-bind-apply-helpers@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/call-bind-apply-helpers/-/call-bind-apply-helpers-1.0.2.tgz#4b5428c222be985d79c3d82657479dbe0b59b2d6"
+  integrity sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==
+  dependencies:
+    es-errors "^1.3.0"
+    function-bind "^1.1.2"
+camelcase@^5.3.1:
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-5.3.1.tgz#e3c9b31569e106811df242f715725a1f4c494320"
+  resolved "https://registry.yarnpkg.com/color-name/-/color-name-1.1.4.tgz#c2a09a87acbde69543de6f63fa3995c826c536a2"
+  integrity sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==
+
+combined-stream@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/combined-stream/-/combined-stream-1.0.8.tgz#c3d45a8b34fd730631a110a8a2520682b31d5a7f"
+  integrity sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==
+  dependencies:
+    delayed-stream "~1.0.0"
+commander@^12.0.0:
+  version "12.1.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-12.1.0.tgz#01423b36f501259fdaac4d0e4d60c96c991585d3"
+  dependencies:
+    browserslist "^4.28.1"
+
+cross-fetch@^3.1.5:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.2.0.tgz#34e9192f53bc757d6614304d9e5e6fb4edb782e3"
+  integrity sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==
+  dependencies:
+    node-fetch "^2.7.0"
+cross-spawn@^7.0.6:
+  version "7.0.6"
+  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.6.tgz#8a58fe78f00dcd70c370451759dfbfaf03e8ee9f"
+    shebang-command "^2.0.0"
+    which "^2.0.1"
+
+css-in-js-utils@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/css-in-js-utils/-/css-in-js-utils-3.1.0.tgz#640ae6a33646d401fc720c54fc61c42cd76ae2bb"
+  integrity sha512-fJAcud6B3rRu+KHYk+Bwf+WFL2MDCJJ1XG9x137tJQ0xYxor7XziQtuGFbWNdqrvF4Tk26O3H73nfVqXt/fW1A==
+  dependencies:
+    hyphenate-style-name "^1.0.3"
+csstype@^3.0.2:
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.2.3.tgz#ec48c0f3e993e50648c86da559e2610995cf989a"
+  resolved "https://registry.yarnpkg.com/define-lazy-prop/-/define-lazy-prop-2.0.0.tgz#3f7ae421129bcaaac9bc74905c98a0009ec9ee7f"
+  integrity sha512-Ds09qNh8yw3khSjiJjiUInaGX9xlqZDY7JVryGxdxV7NPeuqQfplOpQ66yJFZut3jLa5zOwkXw1g9EI2uKh4Og==
+
+delayed-stream@~1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
+  integrity sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==
+depd@2.0.0, depd@~2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/depd/-/depd-2.0.0.tgz#b696163cc757560d09cf22cc8fad1571b79e76df"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.7.tgz#0e20c5b82950140aa99be360a8a5f52335f53c26"
+  integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==
+
+dunder-proto@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/dunder-proto/-/dunder-proto-1.0.1.tgz#d7ae667e1dc83482f8b70fd0f6eefc50da30f58a"
+  integrity sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==
+  dependencies:
+    call-bind-apply-helpers "^1.0.1"
+    es-errors "^1.3.0"
+    gopd "^1.2.0"
+ee-first@1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
+  dependencies:
+    stackframe "^1.3.4"
+
+es-define-property@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/es-define-property/-/es-define-property-1.0.1.tgz#983eb2f9a6724e9303f61addf011c72e09e0b0fa"
+  integrity sha512-e3nRfgfUZ4rNGL232gUgX06QNyyez04KdjFrF+LTRoOXmrOgFKDg4BCdsjW8EnT69eqdYGmRpJwiPVYNrCaW3g==
+es-errors@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/es-errors/-/es-errors-1.3.0.tgz#05f75a25dab98e4fb1dcd5e1472c0546d5057c8f"
+  integrity sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==
+
+es-object-atoms@^1.0.0, es-object-atoms@^1.1.1:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/es-object-atoms/-/es-object-atoms-1.1.2.tgz#a2d0b373205724dfa525d23b0c3e1b1ca582c99b"
+  integrity sha512-HWcBoN6NileqtSydK2FqHbS/LoDd2pqrnQHLyJzBj4kOp/ky2MWMN694xOfkK8/SnUsW2DH7EfyVlydKCsm1Zw==
+  dependencies:
+    es-errors "^1.3.0"
+es-set-tostringtag@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/es-set-tostringtag/-/es-set-tostringtag-2.1.0.tgz#f31dbbe0c183b00a6d26eb6325c810c0fd18bd4d"
+  integrity sha512-j6vWzfrGVfyXxge+O0x5sh6cvxAog0a/4Rdd2K36zCMV5eJ+/+tOAngRO8cODMNWbVRdVlmGZQL2YS3yR8bIUA==
+  dependencies:
+    es-errors "^1.3.0"
+    get-intrinsic "^1.2.6"
+    has-tostringtag "^1.0.2"
+    hasown "^2.0.2"
+escalade@^3.1.1, escalade@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/escalade/-/escalade-3.2.0.tgz#011a3f69856ba189dffa7dc8fcce99d2a87903e5"
+  dependencies:
+    bser "2.1.1"
+
+fbjs-css-vars@^1.0.0:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/fbjs-css-vars/-/fbjs-css-vars-1.0.2.tgz#216551136ae02fe255932c3ec8775f18e2c078b8"
+  integrity sha512-b2XGFAFdWZWg0phtAWLHCk836A1Xann+I+Dgd3Gk64MHKZO44FfoD1KxyvbSh0qZsIoXQGGlVztIY+oitJPpRQ==
+fbjs@^3.0.4:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/fbjs/-/fbjs-3.0.5.tgz#aa0edb7d5caa6340011790bd9249dbef8a81128d"
+  integrity sha512-ztsSx77JBtkuMrEypfhgc3cI0+0h+svqeie7xHbh1k/IKdcydnvadp/mUaGgjAOXQmQSxsqgaRhS3q9fy+1kxg==
+  dependencies:
+    cross-fetch "^3.1.5"
+    fbjs-css-vars "^1.0.0"
+    loose-envify "^1.0.0"
+    object-assign "^4.1.0"
+    promise "^7.1.1"
+    setimmediate "^1.0.5"
+    ua-parser-js "^1.0.35"
+fdir@^6.5.0:
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
+  resolved "https://registry.yarnpkg.com/flow-enums-runtime/-/flow-enums-runtime-0.0.6.tgz#5bb0cd1b0a3e471330f4d109039b7eba5cb3e787"
+  integrity sha512-3PYnM29RFXwvAN6Pc/scUfkI7RwhQ/xqyLUyPNlXUp9S40zI8nup9tUSrTLSVnWGBN38FNiGWbwZOB6uR4OGdw==
+
+follow-redirects@^1.16.0:
+  version "1.16.0"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.16.0.tgz#28474a159d3b9d11ef62050a14ed60e4df6d61bc"
+  integrity sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==
+fontfaceobserver@^2.1.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/fontfaceobserver/-/fontfaceobserver-2.3.0.tgz#5fb392116e75d5024b7ec8e4f2ce92106d1488c8"
+  integrity sha512-6FPvD/IVyT4ZlNe7Wcn5Fb/4ChigpucKYSvD6a+0iMoLn2inpo711eyIcKjmDtE5XNcgAkSH9uN/nfAeZzHEfg==
+
+form-data@^4.0.5:
+  version "4.0.6"
+  resolved "https://registry.yarnpkg.com/form-data/-/form-data-4.0.6.tgz#28e864e1b786dbebb68db1f452f9635278665827"
+  integrity sha512-vKatAh4SlVfgbv+YtmhiRjhEMJsYpsG1Y2rMQtR+SVSbytsSD1YGzDIcrAJmdFec88u/+VoGmxnl+80gL1tRCQ==
+  dependencies:
+    asynckit "^0.4.0"
+    combined-stream "^1.0.8"
+    es-set-tostringtag "^2.1.0"
+    hasown "^2.0.4"
+    mime-types "^2.1.35"
+freeport-async@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/freeport-async/-/freeport-async-2.0.0.tgz#6adf2ec0c629d11abff92836acd04b399135bab4"
+  resolved "https://registry.yarnpkg.com/get-caller-file/-/get-caller-file-2.0.5.tgz#4f94412a82db32f36e3b0b9741f8a97feb031f7e"
+  integrity sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==
+
+get-intrinsic@^1.2.6:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/get-intrinsic/-/get-intrinsic-1.3.0.tgz#743f0e3b6964a93a5491ed1bffaae054d7f98d01"
+  integrity sha512-9fSjSaos/fRIVIp+xSJlE6lfwhES7LNtKaCBIamHsjr2na1BiABJPo0mOjjz8GJDURarmCPGqaiVg5mfjb98CQ==
+  dependencies:
+    call-bind-apply-helpers "^1.0.2"
+    es-define-property "^1.0.1"
+    es-errors "^1.3.0"
+    es-object-atoms "^1.1.1"
+    function-bind "^1.1.2"
+    get-proto "^1.0.1"
+    gopd "^1.2.0"
+    has-symbols "^1.1.0"
+    hasown "^2.0.2"
+    math-intrinsics "^1.1.0"
+get-package-type@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/get-package-type/-/get-package-type-0.1.0.tgz#8de2d803cff44df3bc6c456e6668b36c3926e11a"
+  integrity sha512-pjzuKtY64GYfWizNAJ0fr9VqttZkNiK2iS430LtIHzjBEr6bX8Am2zm4sW4Ro5wjWW5cAlRL1qAMTcXbjNAO2Q==
+
+get-proto@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/get-proto/-/get-proto-1.0.1.tgz#150b3f2743869ef3e851ec0c49d15b1d14d00ee1"
+  integrity sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==
+  dependencies:
+    dunder-proto "^1.0.1"
+    es-object-atoms "^1.0.0"
+getenv@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/getenv/-/getenv-2.0.0.tgz#b1698c7b0f29588f4577d06c42c73a5b475c69e0"
+    once "^1.3.0"
+    path-is-absolute "^1.0.0"
+
+gopd@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/gopd/-/gopd-1.2.0.tgz#89f56b8217bdbc8802bd299df6d7f1081d7e51a1"
+  integrity sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==
+graceful-fs@^4.2.4, graceful-fs@^4.2.9:
+  version "4.2.11"
+  resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.11.tgz#4183e4e8bf08bb6e05bbb2f7d2e0c8f712ca40e3"
+  resolved "https://registry.yarnpkg.com/has-flag/-/has-flag-4.0.0.tgz#944771fd9c81c81265c4d6941860da06bb59479b"
+  integrity sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==
+
+hasown@^2.0.3:
+has-symbols@^1.0.3, has-symbols@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/has-symbols/-/has-symbols-1.1.0.tgz#fc9c6a783a084951d0b971fe1018de813707a338"
+  integrity sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ==
+has-tostringtag@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/has-tostringtag/-/has-tostringtag-1.0.2.tgz#2cdc42d40bef2e5b4eeab7c01a73c54ce7ab5abc"
+  integrity sha512-NqADB8VjPFLM2V0VvHUewwwsw0ZWBaIdgo+ieHtK3hasLz4qeCRjYcqfB6AQrBggRKppKF8L52/VqdVsO47Dlw==
+  dependencies:
+    has-symbols "^1.0.3"
+hasown@^2.0.2, hasown@^2.0.3, hasown@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/hasown/-/hasown-2.0.4.tgz#8c62d8cb90beb2aad5d0a5b67581ad9854c3f003"
+  integrity sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==
+    statuses "~2.0.2"
+    toidentifier "~1.0.1"
+
+https-proxy-agent@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz#c59ef224a04fe8b754f3db0063a25ea30d0005d6"
+  integrity sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==
+  dependencies:
+    agent-base "6"
+    debug "4"
+https-proxy-agent@^7.0.5:
+  version "7.0.6"
+  resolved "https://registry.yarnpkg.com/https-proxy-agent/-/https-proxy-agent-7.0.6.tgz#da8dfeac7da130b05c2ba4b59c9b6cd66611a6b9"
+    agent-base "^7.1.2"
+    debug "4"
+
+hyphenate-style-name@^1.0.3:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/hyphenate-style-name/-/hyphenate-style-name-1.1.0.tgz#1797bf50369588b47b72ca6d5e65374607cf4436"
+  integrity sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==
+ieee754@^1.1.13:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/ieee754/-/ieee754-1.2.1.tgz#8eb7a10a63fff25d15a57b001586d177d1b0d352"
+  resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.8.tgz#a29da425b48806f34767a4efce397269af28432c"
+  integrity sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==
+
+inline-style-prefixer@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/inline-style-prefixer/-/inline-style-prefixer-7.0.1.tgz#9310f3cfa2c6f3901d1480f373981c02691781e8"
+  integrity sha512-lhYo5qNTQp3EvSSp3sRvXMbVQTLrvGV6DycRMJ5dm2BLMiJ30wpXKdDdgX+GmJZ5uQMucwRKHamXSst3Sj/Giw==
+  dependencies:
+    css-in-js-utils "^3.1.0"
+invariant@^2.2.4:
+  version "2.2.4"
+  resolved "https://registry.yarnpkg.com/invariant/-/invariant-2.2.4.tgz#610f3c92c9359ce1db616e538008d23ff35158e6"
+  resolved "https://registry.yarnpkg.com/jimp-compact/-/jimp-compact-0.16.1.tgz#9582aea06548a2c1e04dd148d7c3ab92075aefa3"
+  integrity sha512-dZ6Ra7u1G8c4Letq/B5EzAxj4tLFHL+cGtdpR+PVm4yzPDj+lCk+AbivWt1eOM+ikzkowtyV7qSqX6qr3t71Ww==
+
+js-cookie@^3.0.8:
+  version "3.0.8"
+  resolved "https://registry.yarnpkg.com/js-cookie/-/js-cookie-3.0.8.tgz#444e6f4b27a5d844594fef61c9d6bca5f0787688"
+  integrity sha512-yeJd4aNAdYZQjaon2bpD/Gb0B/omw7HQOsynXXcOiWVCacbBcPlgn8S/d1X6blFSaHao7ozqtW7NZW19xpCtIw==
+"js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
+  resolved "https://registry.yarnpkg.com/marky/-/marky-1.3.0.tgz#422b63b0baf65022f02eda61a238eccdbbc14997"
+  integrity sha512-ocnPZQLNpvbedwTy9kNrQEsknEfgvcLMvOtz3sFeWApDq1MXH1TqkCIx58xlpESsfwQOnuBO9beyQuNGzVvuhQ==
+
+math-intrinsics@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz#a0dd74be81e2aa5c2f27e65ce283605ee4e2b7f9"
+  integrity sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==
+memoize-one@^5.0.0:
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/memoize-one/-/memoize-one-5.2.1.tgz#8337aa3c4335581839ec01c3d594090cebe8f00e"
+  integrity sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==
+
+memoize-one@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/memoize-one/-/memoize-one-6.0.0.tgz#b2591b871ed82948aee4727dc6abceeeac8c1045"
+  integrity sha512-rkpe71W0N0c0Xz6QD0eJETuWAJGnJ9afsl1srmwPrI+yBCkge5EycXXbYRyvL29zZVUWQCY7InPRCv3GDXuZNw==
+merge-stream@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/merge-stream/-/merge-stream-2.0.0.tgz#52823629a14dd00c9770fb6ad47dc6310f2c1f60"
+  resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.54.0.tgz#cddb3ee4f9c64530dff640236661d42cb6a314f5"
+  integrity sha512-aU5EJuIN2WDemCcAp2vFBfp/m4EAhWJnUNSSw0ixs7/kXbd6Pg64EmwJkNdFhB8aWt1sH2CTXrLxo/iAGV3oPQ==
+
+mime-types@^2.1.27, mime-types@~2.1.34:
+mime-types@^2.1.27, mime-types@^2.1.35, mime-types@~2.1.34:
+  version "2.1.35"
+  resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.35.tgz#381a871b62a734450660ae3deee44813f70d959a"
+  integrity sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==
+  resolved "https://registry.yarnpkg.com/nested-error-stacks/-/nested-error-stacks-2.0.1.tgz#d2cc9fc5235ddb371fc44d506234339c8e4b0a4b"
+  integrity sha512-SrQrok4CATudVzBS7coSz26QRSmlK9TzzoFbeKfcPBUFPjcQM9Rqvr/DlJkOrwI/0KcgvMub1n1g5Jt9EgRn4A==
+
+node-fetch@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.7.0.tgz#d0f0fa6e3e2dc1d27efcd8ad99d550bda94d187d"
+  integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
+  dependencies:
+    whatwg-url "^5.0.0"
+node-forge@^1.3.3:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-1.4.0.tgz#1c7b7d8bdc2d078739f58287d589d903a11b2fc2"
+  dependencies:
+    flow-enums-runtime "^0.0.6"
+
+object-assign@^4.0.1:
+object-assign@^4.0.1, object-assign@^4.1.0:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
+  integrity sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==
+  resolved "https://registry.yarnpkg.com/pngjs/-/pngjs-3.4.0.tgz#99ca7d725965fb655814eaf65f38f12bbdbf555f"
+  integrity sha512-NCrCHhWmnQklfH4MtJMRjZ2a8c80qXeMlQMv2uVp9ISJMTt562SbGd6n2oq0PaPgKm7Z6pL9E2UlLIhC+SHL3w==
+
+postcss-value-parser@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz#723c09920836ba6d3e5af019f92bc0971c02e514"
+  integrity sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==
+postcss@~8.4.32:
+  version "8.4.49"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.49.tgz#4ea479048ab059ab3ae61d082190fabfd994fe19"
+  resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.3.tgz#7e8cf8d8f5b8f239c1bc68beb4eb78567d572ef8"
+  integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
+
+promise@^7.1.1:
+  version "7.3.1"
+  resolved "https://registry.yarnpkg.com/promise/-/promise-7.3.1.tgz#064b72602b18f90f29192b8b1bc418ffd1ebd3bf"
+  integrity sha512-nolQXZ/4L+bP/UGlkfaIujX9BKxGwmQ9OT4mOt5yvy8iK1h3wqTEJCijzGANTCCl9nWjY41juyAn2K3Q1hLLTg==
+  dependencies:
+    asap "~2.0.3"
+promise@^8.3.0:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/promise/-/promise-8.3.0.tgz#8cb333d1edeb61ef23869fbb8a4ea0279ab60e0a"
+    kleur "^3.0.3"
+    sisteransi "^1.0.5"
+
+proxy-from-env@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/proxy-from-env/-/proxy-from-env-2.1.0.tgz#a7487568adad577cfaaa7e88c49cab3ab3081aba"
+  integrity sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==
+punycode@^2.1.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.1.tgz#027422e2faec0b25e1549c3e1bd8309b9133b6e5"
+    shell-quote "^1.6.1"
+    ws "^7"
+
+react-dom@19.1.0:
+  version "19.1.0"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-19.1.0.tgz#133558deca37fa1d682708df8904b25186793623"
+  integrity sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==
+  dependencies:
+    scheduler "^0.26.0"
+react-is@^18.0.0:
+  version "18.3.1"
+  resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.3.1.tgz#e83557dc12eae63a99e003a46388b1dcbb44db7e"
+  resolved "https://registry.yarnpkg.com/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.3.1.tgz#feb9a6a8faf0874298947edd556e5af22044e139"
+  integrity sha512-NIXU/iT5+ORyCc7p0z2nnlkouYKX425vuU1OEm6bMMtWWR9yvb+Xg5AZmImTKoF9abxCPqrKC3rOZsKzUYgYZA==
+
+react-native-web@^0.21.0:
+  version "0.21.2"
+  resolved "https://registry.yarnpkg.com/react-native-web/-/react-native-web-0.21.2.tgz#0f6983dfea600d9cc1c66fda87ff9ca585eaa647"
+  integrity sha512-SO2t9/17zM4iEnFvlu2DA9jqNbzNhoUP+AItkoCOyFmDMOhUnBBznBDCYN92fGdfAkfQlWzPoez6+zLxFNsZEg==
+  dependencies:
+    "@babel/runtime" "^7.18.6"
+    "@react-native/normalize-colors" "^0.74.1"
+    fbjs "^3.0.4"
+    inline-style-prefixer "^7.0.1"
+    memoize-one "^6.0.0"
+    nullthrows "^1.1.1"
+    postcss-value-parser "^4.2.0"
+    styleq "^0.1.3"
+react-native@0.81.5:
+  version "0.81.5"
+  resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.81.5.tgz#6c963f137d3979b22aef2d8482067775c8fe2fed"
+  resolved "https://registry.yarnpkg.com/sax/-/sax-1.6.0.tgz#da59637629307b97e7c4cb28e080a7bc38560d5b"
+  integrity sha512-6R3J5M4AcbtLUdZmRv2SygeVaM7IhrLXu9BmnOGmmACak8fiUtOsYNWUS4uK7upbmHIBbLBeFeI//477BKLBzA==
+
+scheduler@0.26.0:
+scheduler@0.26.0, scheduler@^0.26.0:
+  version "0.26.0"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.26.0.tgz#4ce8a8c2a2095f13ea11bf9a445be50c555d6337"
+  integrity sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==
+    parseurl "~1.3.3"
+    send "~0.19.1"
+
+setimmediate@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/setimmediate/-/setimmediate-1.0.5.tgz#290cbb232e306942d7d7ea9b83732ab7856f8285"
+  integrity sha512-MATJdZp8sLqDl/68LfQmbP8zKPLQNV6BIZoIgrscFDQ+RsvK/BxeDQOgyxKKoh0y/8h3BqVFnCqQ/gd+reiIXA==
+setprototypeof@~1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/setprototypeof/-/setprototypeof-1.2.0.tgz#66c9a24a73f9fc28cbe66b09fed3d33dcaf1b424"
+  resolved "https://registry.yarnpkg.com/structured-headers/-/structured-headers-0.4.1.tgz#77abd9410622c6926261c09b9d16cf10592694d1"
+  integrity sha512-0MP/Cxx5SzeeZ10p/bZI0S6MpgD+yxAhi1BOQ34jgnMXsCq3j1t6tQnZu+KdlL7dvJTLT3g9xN8tl10TqgFMcg==
+
+styleq@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/styleq/-/styleq-0.1.3.tgz#8efb2892debd51ce7b31dc09c227ad920decab71"
+  integrity sha512-3ZUifmCDCQanjeej1f6kyl/BeP/Vae5EYkQ9iJfUm/QwZvlgnZzyflqAsAWYURdtea8Vkvswu2GrC57h3qffcA==
+sucrase@~3.35.1:
+  version "3.35.1"
+  resolved "https://registry.yarnpkg.com/sucrase/-/sucrase-3.35.1.tgz#4619ea50393fe8bd0ae5071c26abd9b2e346bfe1"
+  resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.1.tgz#3be34321a88a820ed1bd80dfaa33e479fbb8dd35"
+  integrity sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==
+
+tr46@~0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/tr46/-/tr46-0.0.3.tgz#8184fd347dac9cdc185992f3a6622e14b9d9ab6a"
+  integrity sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==
+ts-interface-checker@^0.1.9:
+  version "0.1.13"
+  resolved "https://registry.yarnpkg.com/ts-interface-checker/-/ts-interface-checker-0.1.13.tgz#784fd3d679722bc103b1b4b8030bcddb5db2a699"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.9.3.tgz#5b4f59e15310ab17a216f5d6cf53ee476ede670f"
+  integrity sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==
+
+ua-parser-js@^1.0.35:
+  version "1.0.41"
+  resolved "https://registry.yarnpkg.com/ua-parser-js/-/ua-parser-js-1.0.41.tgz#bd04dc9ec830fcf9e4fad35cf22dcedd2e3b4e9c"
+  integrity sha512-LbBDqdIC5s8iROCUjMbW1f5dJQTEFB1+KO9ogbvlb3nm9n4YHa5p4KTvFPWvh2Hs8gZMBuiB1/8+pdfe/tDPug==
+undici-types@~8.3.0:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-8.3.0.tgz#44e9fc9f3244648cdea35e4f9bb2d681e9410809"
+  dependencies:
+    defaults "^1.0.3"
+
+webidl-conversions@^3.0.0:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
+  integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
+webidl-conversions@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-5.0.0.tgz#ae59c8a00b121543a2acc65c0434f57b0fc11aff"
+    punycode "^2.1.1"
+    webidl-conversions "^5.0.0"
+
+whatwg-url@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/whatwg-url/-/whatwg-url-5.0.0.tgz#966454e8765462e37644d3626f6742ce8b70965d"
+  integrity sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==
+  dependencies:
+    tr46 "~0.0.3"
+    webidl-conversions "^3.0.0"
+which@^2.0.1:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/which/-/which-2.0.2.tgz#7c6a8dd0a636a0327e10b59c9286eee93f3f51b1"
+GIF of two octocats high fiving each otherTwo octocats
+You made it to the end!
