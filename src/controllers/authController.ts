@@ -48,7 +48,7 @@ export const modifyProfileController = async (req: Request, res: Response) => {
   }
 
   const fields: { username?: string; email?: string } = {};
-  if (usernameValid) fields.username = username;
+  if (usernameValid) fields.username = username.trim();
   if (emailValid) fields.email = email;
 
   const user = await authService.modifyProfile(token, fields);

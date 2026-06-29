@@ -53,13 +53,6 @@ export const modifyProfile = async (
   const user = await User.findOne({ token });
   if (!user) throw new HttpError("Unauthorized", 401);
 
-  if (fields.email !== undefined) {
-    const existing = await User.findOne({ email: fields.email });
-    if (existing && existing._id?.toString() !== user._id?.toString()) {
-      throw new HttpError("Email already in use", 409);
-    }
-  }
-
   try {
     const updated = await User.findOneAndUpdate({ token }, fields, { new: true });
     if (!updated) throw new HttpError("Unauthorized", 401);
@@ -116,9 +109,9 @@ export const changePassword = async (
 };
 
 export const logout = async (token: string): Promise<void> => {
-  const user = await User.findOne({ token });
-  if (!user) throw new HttpError("Unauthorized", 401);
-
-  const newToken = uid2(64);
-  await User.findOneAndUpdate({ token }, { token: newToken });
+  const updated = await User.findOneAndUpdate(
+    { token },
+    { token: uid2(64) },
+  );
+  if (!updated) throw new HttpError("Unauthorized", 401);
 };

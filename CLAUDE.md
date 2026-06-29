@@ -48,8 +48,8 @@ Express 5 + TypeScript backend for a quiz app. Entry point is `src/server.ts`.
 | POST | `/auth/signup` | — | implemented |
 | POST | `/auth/login` | — | implemented |
 | GET | `/auth/profile` | Bearer | implemented |
-| PATCH | `/auth/profile` | Bearer | stub |
-| PATCH | `/auth/password` | Bearer | stub |
+| PATCH | `/auth/profile` | Bearer | implemented |
+| PATCH | `/auth/profile/password` | Bearer | implemented |
 
 ## Environment variables
 
