@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk read *)",
+      "Bash(SKILL_DIR=\"/Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development\" && bash \"$SKILL_DIR/scripts/review-package\" b4991c090fcb89be2843199e2476d33e2a839d4b HEAD --git-dir=/Users/marinebarthelemy/Sites/lereacteur/onthequizzagain/onthequizzagain-backend/.git --work-tree=/Users/marinebarthelemy/Sites/lereacteur/onthequizzagain/onthequizzagain-backend)",
+      "Bash(SKILL_DIR=\"/Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development\" && bash \"$SKILL_DIR/scripts/review-package\" b4991c090fcb89be2843199e2476d33e2a839d4b HEAD)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/task-brief /Users/marinebarthelemy/Sites/lereacteur/onthequizzagain/onthequizzagain-backend/docs/superpowers/plans/2026-06-29-modify-profile-password.md 2)",
+      "Bash(git -C /Users/marinebarthelemy/Sites/lereacteur/onthequizzagain/onthequizzagain-backend rev-parse HEAD)",
+      "Bash(rtk npm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(rtk git *)",
+      "Bash(SKILL_DIR=\"/Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development\" && bash \"$SKILL_DIR/scripts/review-package\" d262e884d1d610de2804d24f2cdf31c859d16264 HEAD)"
+    ]
+  }
+}
