@@ -1,4 +1,5 @@
 import type { Types } from "mongoose";
+import uid2 from "uid2";
 import User from "../models/User";
 import { generatePassword } from "../helpers/auth";
 import { HttpError } from "../middlewares/error";
@@ -112,4 +113,12 @@ export const changePassword = async (
     username: updated.username,
     token: updated.token,
   };
+};
+
+export const logout = async (token: string): Promise<void> => {
+  const user = await User.findOne({ token });
+  if (!user) throw new HttpError("Unauthorized", 401);
+
+  const newToken = uid2(64);
+  await User.findOneAndUpdate({ token }, { token: newToken });
 };
