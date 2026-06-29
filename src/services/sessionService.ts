@@ -36,9 +36,9 @@ export const getLastSession = async (token: string) => {
   const user = await User.findOne({ token });
   if (!user) throw new HttpError("Unauthorized", 401);
 
-  const session = await Session.findOne({ user: user._id }).sort({
-    createdAt: -1,
-  });
+  const session = await Session.findOne({ user: user._id })
+    .sort({ createdAt: -1 })
+    .populate("questions.question");
   if (!session) throw new HttpError("Session not found", 404);
 
   return session;
@@ -51,7 +51,7 @@ export const updateSession = async (token: string, id: string, patch: SessionPat
   const session = await Session.findOneAndUpdate({ _id: id, user: user._id }, patch, {
     new: true,
     runValidators: true,
-  });
+  }).populate("questions.question");
   if (!session) throw new HttpError("Session not found", 404);
 
   return session;
@@ -71,6 +71,7 @@ export const addQuestionToSession = async (
 
   session.questions.push({ question: questionId, playerName });
   await session.save();
+  await session.populate("questions.question");
 
   return session;
 };
@@ -94,6 +95,7 @@ export const answerQuestion = async (
 
   entry.status = status;
   await session.save();
+  await session.populate("questions.question");
 
   return session;
 };
