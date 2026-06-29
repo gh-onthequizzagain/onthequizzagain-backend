@@ -5,6 +5,12 @@ export enum QuestionMode {
   TrueFalse = "trueFalse",
 }
 
+export enum QuestionCategory {
+  Geography = "geography",
+  History = "history",
+  Specialty = "specialty",
+}
+
 const AnswerSchema = new Schema(
   {
     id: { type: String, required: true },
@@ -31,6 +37,12 @@ const QuestionSchema = new Schema(
     solutionId: { type: String, required: true },
     type: { type: String, enum: Object.values(QuestionMode), required: true },
     coordinate: { type: LocationSchema, required: true },
+    pointCulture: { type: String, required: true },
+    category: {
+      type: String,
+      enum: Object.values(QuestionCategory),
+      required: true,
+    },
   },
   { timestamps: true }
 );

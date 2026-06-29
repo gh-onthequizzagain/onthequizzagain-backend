@@ -7,7 +7,10 @@ import {
   QuestionMode,
   QuestionStatus,
 } from "../models/Session";
-import { QuestionMode as QuestionQuestionMode } from "../models/Question";
+import {
+  QuestionMode as QuestionQuestionMode,
+  QuestionCategory,
+} from "../models/Question";
 
 type Player = { name: string; isMainUser: boolean };
 type Frequency = { type: FrequencyType; value: number };
@@ -22,6 +25,8 @@ export type Question = {
   solutionId: string;
   type: QuestionQuestionMode;
   coordinate: Location;
+  pointCulture: string;
+  category: QuestionCategory;
 };
 
 export const assertTitle = (value: unknown): string => {
@@ -133,6 +138,10 @@ export const assertQuestion = (value: unknown): Question => {
     throw new HttpError("Invalid field: solutionId", 400);
   if (!(Object.values(QuestionQuestionMode) as unknown[]).includes(q.type))
     throw new HttpError("Invalid field: type", 400);
+  if (!isString(q.pointCulture))
+    throw new HttpError("Invalid field: pointCulture", 400);
+  if (!(Object.values(QuestionCategory) as unknown[]).includes(q.category))
+    throw new HttpError("Invalid field: category", 400);
 
   return {
     photo: q.photo,
@@ -143,5 +152,7 @@ export const assertQuestion = (value: unknown): Question => {
     solutionId: q.solutionId,
     type: q.type as QuestionQuestionMode,
     coordinate: assertCoordinate(q.coordinate),
+    pointCulture: q.pointCulture,
+    category: q.category as QuestionCategory,
   };
 };
