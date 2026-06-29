@@ -10,7 +10,18 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(rtk git *)",
-      "Bash(SKILL_DIR=\"/Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development\" && bash \"$SKILL_DIR/scripts/review-package\" d262e884d1d610de2804d24f2cdf31c859d16264 HEAD)"
+      "Bash(SKILL_DIR=\"/Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development\" && bash \"$SKILL_DIR/scripts/review-package\" d262e884d1d610de2804d24f2cdf31c859d16264 HEAD)",
+      "Bash(git -C /Users/marinebarthelemy/Sites/lereacteur/onthequizzagain/onthequizzagain-backend rev-parse --show-toplevel)",
+      "Bash(cat \"$\\(git -C /Users/marinebarthelemy/Sites/lereacteur/onthequizzagain/onthequizzagain-backend rev-parse --show-toplevel\\)/.superpowers/sdd/progress.md\")",
+      "Bash(rtk ls *)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/task-brief docs/superpowers/plans/2026-06-29-logout.md 1)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 8604fa8 747d8d9 2>&1)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/task-brief docs/superpowers/plans/2026-06-29-logout.md 2)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 747d8d9 78cd2b1 2>&1)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/task-brief docs/superpowers/plans/2026-06-29-logout.md 3)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 78cd2b1 0a02a1b 2>&1)",
+      "Bash(rtk grep *)",
+      "Bash(bash /Users/marinebarthelemy/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 0a02a1b 2bbea96 2>&1)"
     ]
   }
 }
