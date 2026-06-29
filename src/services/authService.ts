@@ -69,3 +69,35 @@ export const modifyProfile = async (
     token: updated.token,
   };
 };
+
+export const changePassword = async (
+  token: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<PublicUser> => {
+  const user = await User.findOne({ token });
+  if (!user) throw new HttpError("Unauthorized", 401);
+
+  const { hash } = generatePassword(currentPassword, user.salt);
+  if (hash !== user.hash) throw new HttpError("Invalid credentials", 401);
+
+  const {
+    hash: newHash,
+    salt: newSalt,
+    token: newToken,
+  } = generatePassword(newPassword);
+
+  const updated = await User.findOneAndUpdate(
+    { token },
+    { hash: newHash, salt: newSalt, token: newToken },
+    { new: true },
+  );
+  if (!updated) throw new HttpError("Unauthorized", 401);
+
+  return {
+    _id: updated._id,
+    email: updated.email,
+    username: updated.username,
+    token: updated.token,
+  };
+};

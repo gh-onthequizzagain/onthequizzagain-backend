@@ -52,4 +52,16 @@ export const modifyProfileController = async (req: Request, res: Response) => {
   res.status(200).json(user);
 };
 
-export const passwordController = async (req: Request, res: Response) => {};
+export const passwordController = async (req: Request, res: Response) => {
+  const { token } = req;
+  if (!token) throw new HttpError("Unauthorized", 401);
+
+  const { currentPassword, newPassword } = req.body;
+
+  if (!isString(currentPassword) || !isString(newPassword)) {
+    throw new HttpError("Missing or invalid fields", 400);
+  }
+
+  const user = await authService.changePassword(token, currentPassword, newPassword);
+  res.status(200).json(user);
+};
