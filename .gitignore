@@ -3,4 +3,4 @@ node_modules
 .env
 dist/
 
-*.local*
+.claude/settings.local.json
