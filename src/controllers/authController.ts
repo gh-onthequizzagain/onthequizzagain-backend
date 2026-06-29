@@ -68,3 +68,11 @@ export const passwordController = async (req: Request, res: Response) => {
   const user = await authService.changePassword(token, currentPassword, newPassword);
   res.status(200).json(user);
 };
+
+export const logoutController = async (req: Request, res: Response) => {
+  const { token } = req;
+  if (!token) throw new HttpError("Unauthorized", 401);
+
+  await authService.logout(token);
+  res.status(200).json({ message: "Logged out successfully" });
+};
