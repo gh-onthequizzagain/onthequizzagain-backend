@@ -43,6 +43,20 @@ export const getLastSessionController = async (
   res.status(200).json(session);
 };
 
+export const getSessionController = async (
+  req: Request,
+  res: JsonResponse<SessionType>,
+) => {
+  const { token } = req;
+  if (!token) throw new HttpError("Unauthorized", 401);
+
+  const { id } = req.params;
+  if (!isMongoId(id)) throw new HttpError("Invalid session id", 400);
+
+  const session = await sessionService.getSessionById(token, id);
+  res.status(200).json(session);
+};
+
 export const updateSessionController = async (
   req: Request,
   res: JsonResponse<SessionType>,

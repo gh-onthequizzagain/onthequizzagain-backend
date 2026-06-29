@@ -3,6 +3,7 @@ import isAuthenticated from "../middlewares/isAuthenticated";
 import {
   createSessionController,
   getLastSessionController,
+  getSessionController,
   updateSessionController,
   addQuestionController,
   answerQuestionController,
@@ -12,8 +13,9 @@ const router = Router();
 
 router.post("/session", isAuthenticated, createSessionController);
 router.get("/session", isAuthenticated, getLastSessionController);
+router.get("/session/:id", isAuthenticated, getSessionController);
 router.patch("/session/:id", isAuthenticated, updateSessionController);
 router.post("/session/:id/question", isAuthenticated, addQuestionController);
-router.patch("/session/:id/question/:questionId/answer", isAuthenticated, answerQuestionController);
+router.patch("/session/:id/question/:questionId", isAuthenticated, answerQuestionController);
 
 export default router;
