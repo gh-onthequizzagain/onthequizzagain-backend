@@ -134,3 +134,65 @@ Exemple de body :
 ```json
 { "status": "correctlyFound" }
 ```
+
+## exemple de session
+
+```
+{
+    "_id": "6a42449a08ff37ff1ecf0b3f",
+    "user": "6a423e989c441cfb2555b6af",
+    "players": [
+        {
+            "name": "matou",
+            "isMainUser": true
+        },
+        {
+            "name": "lea",
+            "isMainUser": false
+        }
+    ],
+    "screen": "inGame",
+    "stepIndex": 2,
+    "title": "Balade Paris",
+    "difficulty": "hard",
+    "hasNotification": false,
+    "frequency": {
+        "type": "distance",
+        "value": 500
+    },
+    "questionModes": [
+        "multipleChoice"
+    ],
+    "questions": [
+        {
+            "question": {
+                "_id": "6a4257078ab0516a5a05dd76",
+                "photo": "https://example.com/photo.jpg",
+                "locationTitle": "Tour Eiffel",
+                "locationDistance": 120,
+                "question": "Quelle ville ?",
+                "answers": [
+                    {
+                        "id": "a1",
+                        "text": "Paris"
+                    }
+                ],
+                "solutionId": "a1",
+                "type": "multipleChoice",
+                "coordinate": {
+                    "lon": 2.2945,
+                    "lat": 48.8584
+                },
+                "createdAt": "2026-06-29T11:29:11.043Z",
+                "updatedAt": "2026-06-29T11:29:11.043Z",
+                "__v": 0
+            },
+            "playerName": "matou",
+            "status": "correctlyFound"
+        }
+    ],
+    "createdAt": "2026-06-29T10:10:34.174Z",
+    "updatedAt": "2026-06-29T11:43:39.757Z",
+    "__v": 1
+}
+```
