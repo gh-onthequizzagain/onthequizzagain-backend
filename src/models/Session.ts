@@ -70,7 +70,7 @@ const SessionSchema = new Schema(
     title: { type: String, default: "" },
     frequency: {
       type: FrequencySchema,
-      default: () => ({ type: FrequencyType.Time, value: 300 }),
+      default: () => ({ type: FrequencyType.Time, value: 10 }),
     },
     difficulty: {
       type: String,
@@ -82,7 +82,7 @@ const SessionSchema = new Schema(
       default: () => [QuestionMode.MultipleChoice, QuestionMode.TrueFalse],
     },
     hasNotification: { type: Boolean, default: true },
-    totalQuestions: { type: Number, default: 25 },
+    totalQuestions: { type: Number, default: 12 },
     questions: { type: [SessionQuestionSchema], default: [] },
   },
   { timestamps: true }
