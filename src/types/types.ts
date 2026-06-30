@@ -9,3 +9,6 @@ export type MongoId = {
 
 export type AudienceType = "enfants" | "adolescents" | "adultes";
 
+export type PublicCibleType = "parent" | "enfant" | "tous";
+export type SessionQuestionType = "QCM" | "vraifaux" | "both";
+
