@@ -35,10 +35,6 @@ const QuestionSchema = new Schema({
   answers: { type: [AnswerSchema], required: true },
   solutionId: { type: String, required: true },
   funFact: { type: String },
-  coordinate: {
-    lon: { type: Number },
-    lat: { type: Number },
-  },
   localisation: {
     type: {
       type: String,

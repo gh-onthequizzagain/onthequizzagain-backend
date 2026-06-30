@@ -15,7 +15,6 @@ import {
 type Player = { name: string; isMainUser: boolean };
 type Frequency = { type: FrequencyType; value: number };
 type Answer = { id: string; text: string };
-type Location = { lon: number; lat: number };
 export type Question = {
   photo: string;
   locationTitle: string;
@@ -24,7 +23,6 @@ export type Question = {
   answers: Answer[];
   solutionId: string;
   type: QuestionQuestionMode;
-  coordinate: Location;
   funFact: string;
   category: QuestionCategory;
 };
@@ -116,13 +114,6 @@ const assertAnswers = (value: unknown): Answer[] => {
   return value.map((a) => ({ id: a.id as string, text: a.text as string }));
 };
 
-const assertCoordinate = (value: unknown): Location => {
-  const loc = value as Location | null;
-  if (!loc || !isNumber(loc.lon) || !isNumber(loc.lat))
-    throw new HttpError("Invalid field: coordinate", 400);
-  return { lon: loc.lon, lat: loc.lat };
-};
-
 export const assertQuestion = (value: unknown): Question => {
   const q = value as Partial<Question> | null;
   if (!q) throw new HttpError("Invalid field: question", 400);
@@ -151,7 +142,6 @@ export const assertQuestion = (value: unknown): Question => {
     answers: assertAnswers(q.answers),
     solutionId: q.solutionId,
     type: q.type as QuestionQuestionMode,
-    coordinate: assertCoordinate(q.coordinate),
     funFact: q.funFact,
     category: q.category as QuestionCategory,
   };
