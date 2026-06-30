@@ -1,5 +1,6 @@
 import axios from "axios";
 import { HttpError } from "../middlewares/error";
+import { logError } from "../helpers/log";
 import type { AudienceType } from "../types/types";
 
 export type QuestionType = "QCM" | "vraifaux";
@@ -48,6 +49,25 @@ const THEMES: Record<string, string> = {
 const pickRandomTheme = (): string => {
   const keys = Object.keys(THEMES);
   return keys[Math.floor(Math.random() * keys.length)] as string;
+};
+
+const MODELS = [
+  "poolside/laguna-m.1:free",
+  "openrouter/owl-alpha",
+  "liquid/lfm-2.5-1.2b-thinking:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "openai/gpt-oss-120b:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "cohere/north-mini-code:free",
+];
+
+let modelIndex = 0;
+
+const pickNextModel = (): string => {
+  const model = MODELS[modelIndex]!;
+  modelIndex = (modelIndex + 1) % MODELS.length;
+  return model;
 };
 
 const AUDIENCE_PROFILES: Record<AudienceType, string> = {
@@ -146,7 +166,9 @@ ${audienceProfile}
 ## Format de réponse
 Réponds UNIQUEMENT avec ce JSON, sans texte avant ni après, sans balises markdown.
 
-${type === "QCM" ? `Le type est QCM → choices doit contenir EXACTEMENT 4 éléments réels :
+${
+  type === "QCM"
+    ? `Le type est QCM → choices doit contenir EXACTEMENT 4 éléments réels :
 {
   "poi": "Nom exact du lieu ou sujet de la question",
   "distanceKm": 12,
@@ -159,7 +181,8 @@ ${type === "QCM" ? `Le type est QCM → choices doit contenir EXACTEMENT 4 élé
   "anecdote": "...",
   "source": "https://fr.wikipedia.org/wiki/...",
   "confidence": 92
-}` : `Le type est vraifaux → choices doit contenir EXACTEMENT 2 éléments ["Vrai", "Faux"] et rien d'autre :
+}`
+    : `Le type est vraifaux → choices doit contenir EXACTEMENT 2 éléments ["Vrai", "Faux"] et rien d'autre :
 {
   "poi": "Nom exact du lieu ou sujet de la question",
   "distanceKm": 12,
@@ -172,7 +195,8 @@ ${type === "QCM" ? `Le type est QCM → choices doit contenir EXACTEMENT 4 élé
   "anecdote": "...",
   "source": "https://fr.wikipedia.org/wiki/...",
   "confidence": 92
-}`}
+}`
+}
 
 ## Détail des champs
 - poi : commune ou lieu précis dans le rayon de 20 km
@@ -187,20 +211,32 @@ ${type === "QCM" ? `Le type est QCM → choices doit contenir EXACTEMENT 4 élé
 - source : URL Wikipédia (fr.wikipedia.org), wikidata (https://www.wikidata.org/wiki/Wikidata:Main_Page?uselang=fr) ou page officielle ayant permis de vérifier le fait
 - confidence : ton niveau de certitude sur la réponse correcte, entre 0 et 100`;
 
-  const response = await axios.post<OpenRouterResponse>(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      model: "openai/gpt-oss-120b:free",
-      // model: "openrouter/owl-alpha",
-      messages: [{ role: "user", content: prompt }],
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-    },
-  );
+  const tryModels = async () => {
+    let lastErr: unknown;
+    for (let i = 0; i < MODELS.length; i++) {
+      const model = pickNextModel();
+      try {
+        return await axios.post<OpenRouterResponse>(
+          "https://openrouter.ai/api/v1/chat/completions",
+          { model, messages: [{ role: "user", content: prompt }] },
+          { headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" } },
+        );
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          lastErr = err;
+          logError(`Model ${model} failed (${String(err.response?.status ?? "network error")}), trying next`);
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (axios.isAxiosError(lastErr) && lastErr.response?.status === 429) {
+      throw new HttpError("All AI models are rate limited, please try again later", 429);
+    }
+    throw new HttpError("All AI models failed, please try again later", 503);
+  };
+
+  const response = await tryModels();
 
   const content = response.data.choices[0]?.message.content;
   if (!content) throw new HttpError("Empty response from AI", 502);
