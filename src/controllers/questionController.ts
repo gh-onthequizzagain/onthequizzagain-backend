@@ -4,8 +4,8 @@ import { HttpError } from "../middlewares/error";
 import {
   isNumber,
   isMongoId,
-  isPublicCibleType,
-  isSessionQuestionType,
+  isTargetAudience,
+  isQuestionMode,
 } from "../helpers/validators";
 import { findNearestQuestion } from "../services/questionService";
 
@@ -16,8 +16,8 @@ export const getNearestQuestionController = async (
   const {
     latitude,
     longitude,
-    publicCible = "tous",
-    type = "both",
+    targetAudience = "all",
+    type,
     excludeIds = [],
   } = req.body;
 
@@ -29,16 +29,16 @@ export const getNearestQuestionController = async (
     throw new HttpError("Missing or invalid field: longitude", 400);
   }
 
-  if (!isPublicCibleType(publicCible)) {
+  if (!isTargetAudience(targetAudience)) {
     throw new HttpError(
-      "Invalid field: publicCible must be 'parent', 'enfant' or 'tous'",
+      "Invalid field: targetAudience must be 'parent', 'child' or 'all'",
       400,
     );
   }
 
-  if (!isSessionQuestionType(type)) {
+  if (type !== undefined && !isQuestionMode(type)) {
     throw new HttpError(
-      "Invalid field: type must be 'QCM', 'vraifaux' or 'both'",
+      "Invalid field: type must be 'multipleChoice' or 'trueFalse'",
       400,
     );
   }
@@ -55,8 +55,8 @@ export const getNearestQuestionController = async (
   const question = await findNearestQuestion({
     latitude,
     longitude,
-    publicCible,
-    type,
+    targetAudience,
+    ...(type !== undefined ? { type } : {}),
     excludeIds: objectIds,
   });
 

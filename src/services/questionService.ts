@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
-import Question, { type QuestionDocument } from "../models/Question";
+import Question, { QuestionMode, type QuestionDocument } from "../models/Question";
 import type { Question as QuestionInput } from "../helpers/sessionAssert";
-import type { PublicCibleType, SessionQuestionType } from "../types/types";
+import type { TargetAudienceType } from "../types/types";
 
 export const createQuestion = async (
   data: QuestionInput,
@@ -12,15 +12,15 @@ export const createQuestion = async (
 type NearestQuestionParams = {
   latitude: number;
   longitude: number;
-  publicCible: PublicCibleType;
-  type: SessionQuestionType;
+  targetAudience: TargetAudienceType;
+  type?: QuestionMode;
   excludeIds: Types.ObjectId[];
 };
 
 export const findNearestQuestion = async ({
   latitude,
   longitude,
-  publicCible,
+  targetAudience,
   type,
   excludeIds,
 }: NearestQuestionParams) => {
@@ -32,13 +32,12 @@ export const findNearestQuestion = async ({
     },
   };
 
-  if (type === "QCM") filter.type = "multipleChoice";
-  else if (type === "vraifaux") filter.type = "trueFalse";
+  if (type) filter.type = type;
 
-  if (publicCible === "parent") {
-    filter.publicCible = { $in: ["parent", "tous"] };
-  } else if (publicCible === "enfant") {
-    filter.publicCible = { $in: ["enfant", "tous"] };
+  if (targetAudience === "parent") {
+    filter.targetAudience = { $in: ["parent", "all"] };
+  } else if (targetAudience === "child") {
+    filter.targetAudience = { $in: ["child", "all"] };
   }
 
   if (excludeIds.length > 0) {

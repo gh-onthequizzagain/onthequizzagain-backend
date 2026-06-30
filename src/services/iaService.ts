@@ -2,8 +2,7 @@ import axios from "axios";
 import { HttpError } from "../middlewares/error";
 import { logError } from "../helpers/log";
 import type { AudienceType } from "../types/types";
-
-export type QuestionType = "QCM" | "vraifaux";
+import { QuestionMode } from "../models/Question";
 
 export type IAQuestion = {
   poi: string;
@@ -96,7 +95,7 @@ const AUDIENCE_PROFILES: Record<AudienceType, string> = {
 export const fetchIAQuestion = async (
   latitude: number,
   longitude: number,
-  type: QuestionType,
+  type: QuestionMode,
   audience: AudienceType,
 ): Promise<IAQuestion> => {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -116,9 +115,9 @@ Convertis ces coordonnées en région/département français pour identifier les
 
 ## ⚠️ TYPE DE QUESTION — INSTRUCTION PRIORITAIRE
 Le type imposé pour cette question est : **${type}**
-Tu DOIS générer EXCLUSIVEMENT ce type. Ne génère PAS un QCM si le type est "vraifaux", et inversement.
-- Si type = "QCM" → applique les règles QCM (4 choix réels, 1 bonne réponse mélangée parmi 3 distracteurs)
-- Si type = "vraifaux" → applique les règles Vrai ou Faux (2 choix uniquement : "Vrai" et "Faux")
+Tu DOIS générer EXCLUSIVEMENT ce type. Ne génère PAS un QCM si le type est "trueFalse", et inversement.
+- Si type = "multipleChoice" → applique les règles QCM (4 choix réels, 1 bonne réponse mélangée parmi 3 distracteurs)
+- Si type = "trueFalse" → applique les règles Vrai ou Faux (2 choix uniquement : "Vrai" et "Faux")
 
 ## Thème imposé pour cette question
 Thème obligatoire : **${theme}**
@@ -167,14 +166,14 @@ ${audienceProfile}
 Réponds UNIQUEMENT avec ce JSON, sans texte avant ni après, sans balises markdown.
 
 ${
-  type === "QCM"
-    ? `Le type est QCM → choices doit contenir EXACTEMENT 4 éléments réels :
+  type === QuestionMode.MultipleChoice
+    ? `Le type est multipleChoice → choices doit contenir EXACTEMENT 4 éléments réels :
 {
   "poi": "Nom exact du lieu ou sujet de la question",
   "distanceKm": 12,
   "theme": "${theme}",
   "audience": "${audience}",
-  "type": "QCM",
+  "type": "multipleChoice",
   "question": "...",
   "choices": ["choix A", "choix B", "choix C", "choix D"],
   "answer": "la bonne réponse (identique à l'un des 4 choix)",
@@ -182,13 +181,13 @@ ${
   "source": "https://fr.wikipedia.org/wiki/...",
   "confidence": 92
 }`
-    : `Le type est vraifaux → choices doit contenir EXACTEMENT 2 éléments ["Vrai", "Faux"] et rien d'autre :
+    : `Le type est trueFalse → choices doit contenir EXACTEMENT 2 éléments ["Vrai", "Faux"] et rien d'autre :
 {
   "poi": "Nom exact du lieu ou sujet de la question",
   "distanceKm": 12,
   "theme": "${theme}",
   "audience": "${audience}",
-  "type": "vraifaux",
+  "type": "trueFalse",
   "question": "...",
   "choices": ["Vrai", "Faux"],
   "answer": "Vrai ou Faux (un seul mot, identique à l'un des 2 choix)",
@@ -205,8 +204,8 @@ ${
 - audience : "${audience}" (valeur fixe, ne pas modifier)
 - type : "${type}" (valeur fixe, ne pas modifier)
 - question : la question posée au joueur
-- choices : ${type === "QCM" ? "tableau de 4 réponses RÉELLES, la bonne réponse mélangée parmi les autres" : 'tableau de 2 éléments UNIQUEMENT : ["Vrai", "Faux"]'}
-- answer : ${type === "QCM" ? "la bonne réponse (doit correspondre exactement à l'un des éléments de choices)" : '"Vrai" ou "Faux" (doit correspondre exactement à l\'un des 2 éléments de choices)'}
+- choices : ${type === QuestionMode.MultipleChoice ? "tableau de 4 réponses RÉELLES, la bonne réponse mélangée parmi les autres" : 'tableau de 2 éléments UNIQUEMENT : ["Vrai", "Faux"]'}
+- answer : ${type === QuestionMode.MultipleChoice ? "la bonne réponse (doit correspondre exactement à l'un des éléments de choices)" : '"Vrai" ou "Faux" (doit correspondre exactement à l\'un des 2 éléments de choices)'}
 - anecdote : 2-3 phrases surprenantes sur le sujet, différentes de la question, à afficher après la réponse
 - source : URL Wikipédia (fr.wikipedia.org), wikidata (https://www.wikidata.org/wiki/Wikidata:Main_Page?uselang=fr) ou page officielle ayant permis de vérifier le fait
 - confidence : ton niveau de certitude sur la réponse correcte, entre 0 et 100`;
