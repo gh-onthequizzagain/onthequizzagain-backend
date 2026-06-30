@@ -32,6 +32,17 @@ export const createSessionController = async (
   res.status(201).json(session);
 };
 
+export const getSessionHistoryController = async (
+  req: Request,
+  res: JsonResponse<SessionType[]>,
+) => {
+  const { token } = req;
+  if (!token) throw new HttpError("Unauthorized", 401);
+
+  const sessions = await sessionService.getAllSessions(token);
+  res.status(200).json(sessions);
+};
+
 export const getLastSessionController = async (
   req: Request,
   res: JsonResponse<SessionType>,

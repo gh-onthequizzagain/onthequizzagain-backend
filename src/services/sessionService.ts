@@ -32,6 +32,15 @@ export const createSession = async (token: string) => {
   return session;
 };
 
+export const getAllSessions = async (token: string) => {
+  const user = await User.findOne({ token });
+  if (!user) throw new HttpError("Unauthorized", 401);
+
+  return Session.find({ user: user._id })
+    .sort({ createdAt: -1 })
+    .populate("questions.question");
+};
+
 export const getLastSession = async (token: string) => {
   const user = await User.findOne({ token });
   if (!user) throw new HttpError("Unauthorized", 401);
