@@ -1,6 +1,13 @@
 import { Types } from "mongoose";
-import Question from "../models/Question";
+import Question, { type QuestionDocument } from "../models/Question";
+import type { Question as QuestionInput } from "../helpers/sessionAssert";
 import type { PublicCibleType, SessionQuestionType } from "../types/types";
+
+export const createQuestion = async (
+  data: QuestionInput,
+): Promise<QuestionDocument> => {
+  return Question.create(data);
+};
 
 type NearestQuestionParams = {
   latitude: number;
