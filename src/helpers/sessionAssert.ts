@@ -25,7 +25,7 @@ export type Question = {
   solutionId: string;
   type: QuestionQuestionMode;
   coordinate: Location;
-  pointCulture: string;
+  funFact: string;
   category: QuestionCategory;
 };
 
@@ -138,8 +138,8 @@ export const assertQuestion = (value: unknown): Question => {
     throw new HttpError("Invalid field: solutionId", 400);
   if (!(Object.values(QuestionQuestionMode) as unknown[]).includes(q.type))
     throw new HttpError("Invalid field: type", 400);
-  if (!isString(q.pointCulture))
-    throw new HttpError("Invalid field: pointCulture", 400);
+  if (!isString(q.funFact))
+    throw new HttpError("Invalid field: funFact", 400);
   if (!(Object.values(QuestionCategory) as unknown[]).includes(q.category))
     throw new HttpError("Invalid field: category", 400);
 
@@ -152,7 +152,7 @@ export const assertQuestion = (value: unknown): Question => {
     solutionId: q.solutionId,
     type: q.type as QuestionQuestionMode,
     coordinate: assertCoordinate(q.coordinate),
-    pointCulture: q.pointCulture,
+    funFact: q.funFact,
     category: q.category as QuestionCategory,
   };
 };
