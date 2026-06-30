@@ -1,5 +1,10 @@
+import type { AudienceType, PublicCibleType, SessionQuestionType } from "../types/types";
+
 export const isString = (str: unknown): str is string =>
   typeof str === "string";
+
+export const isAudienceType = (value: unknown): value is AudienceType =>
+  value === "enfants" || value === "adolescents" || value === "adultes";
 
 export const isNumber = (value: unknown): value is number =>
   typeof value === "number" && !Number.isNaN(value);
@@ -31,3 +36,9 @@ export const isEmail = (value: unknown): value is string => {
 
   return /^[a-z0-9_.-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(value);
 };
+
+export const isPublicCibleType = (value: unknown): value is PublicCibleType =>
+  value === "parent" || value === "enfant" || value === "tous";
+
+export const isSessionQuestionType = (value: unknown): value is SessionQuestionType =>
+  value === "QCM" || value === "vraifaux" || value === "both";

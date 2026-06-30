@@ -19,36 +19,40 @@ const AnswerSchema = new Schema(
   { _id: false }
 );
 
-const LocationSchema = new Schema(
-  {
-    lon: { type: Number, required: true },
-    lat: { type: Number, required: true },
+const QuestionSchema = new Schema({
+  type: {
+    type: String,
+    enum: ["multipleChoice", "trueFalse"],
+    required: true,
   },
-  { _id: false }
-);
-
-const QuestionSchema = new Schema(
-  {
-    photo: { type: String, required: true },
-    locationTitle: { type: String, required: true },
-    locationDistance: { type: Number, required: true },
-    question: { type: String, required: true },
-    answers: { type: [AnswerSchema], default: [] },
-    solutionId: { type: String, required: true },
-    type: { type: String, enum: Object.values(QuestionMode), required: true },
-    coordinate: { type: LocationSchema, required: true },
-    pointCulture: { type: String, required: true },
-    category: {
+  question: { type: String, required: true },
+  answers: { type: [AnswerSchema], required: true },
+  solutionId: { type: String, required: true },
+  pointCulture: { type: String },
+  coordinate: {
+    lon: { type: Number },
+    lat: { type: Number },
+  },
+  localisation: {
+    type: {
       type: String,
-      enum: Object.values(QuestionCategory),
-      required: true,
+      enum: ["Point"],
     },
+    coordinates: { type: [Number] },
   },
-  { timestamps: true }
-);
+  rayonDeclenchement: { type: Number },
+  publicCible: {
+    type: String,
+    enum: ["parent", "enfant", "tous"],
+  },
+  locationTitle: { type: String },
+  category: { type: String },
+});
 
-export type QuestionType = InferSchemaType<typeof QuestionSchema> & {
-  _id?: Types.ObjectId;
+QuestionSchema.index({ localisation: "2dsphere" });
+
+export type QuestionDocument = InferSchemaType<typeof QuestionSchema> & {
+  _id: Types.ObjectId;
 };
 
-export default model<QuestionType>("Question", QuestionSchema);
+export default model<QuestionDocument>("Question", QuestionSchema, "questions");
