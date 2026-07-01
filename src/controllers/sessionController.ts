@@ -1,7 +1,13 @@
 /// <reference path="../types/express.d.ts" />
 import type { Request } from "express";
+import { Types } from "mongoose";
 import { HttpError } from "../middlewares/error";
-import { isMongoId } from "../helpers/validators";
+import {
+  isMongoId,
+  isNumber,
+  isTargetAudience,
+  isQuestionMode,
+} from "../helpers/validators";
 import type { JsonResponse } from "../types/types";
 import type { SessionType } from "../models/Session";
 import {
@@ -13,7 +19,6 @@ import {
   assertQuestionModes,
   assertScreen,
   assertStepIndex,
-  assertQuestion,
   assertPlayerName,
   assertStatus,
 } from "../helpers/sessionAssert";
@@ -116,10 +121,56 @@ export const addQuestionController = async (
   const { id } = req.params;
   if (!isMongoId(id)) throw new HttpError("Invalid session id", 400);
 
-  const questionData = assertQuestion(req.body);
+  const {
+    latitude,
+    longitude,
+    targetAudience = "all",
+    type,
+    excludeIds = [],
+  } = req.body;
+
+  if (!isNumber(latitude))
+    throw new HttpError("Missing or invalid field: latitude", 400);
+
+  if (!isNumber(longitude))
+    throw new HttpError("Missing or invalid field: longitude", 400);
+
+  if (!isTargetAudience(targetAudience))
+    throw new HttpError(
+      "Invalid field: targetAudience must be 'parent', 'child' or 'all'",
+      400,
+    );
+
+  if (type !== undefined && !isQuestionMode(type))
+    throw new HttpError(
+      "Invalid field: type must be 'multipleChoice' or 'trueFalse'",
+      400,
+    );
+
+  if (!Array.isArray(excludeIds) || !excludeIds.every(isMongoId))
+    throw new HttpError(
+      "Invalid field: excludeIds must be an array of MongoDB ObjectId strings",
+      400,
+    );
+
   const playerName = assertPlayerName(req.body.playerName);
 
-  const question = await questionService.createQuestion(questionData);
+  const objectIds = (excludeIds as string[]).map(
+    (qid) => new Types.ObjectId(qid),
+  );
+
+  const question = await questionService.findNearestQuestion({
+    latitude,
+    longitude,
+    targetAudience,
+    ...(type !== undefined ? { type } : {}),
+    excludeIds: objectIds,
+  });
+
+  if (!question) {
+    throw new HttpError("No question found near your location", 404);
+  }
+
   const session = await sessionService.addQuestionToSession(
     token,
     id,

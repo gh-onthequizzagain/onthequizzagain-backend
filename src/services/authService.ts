@@ -1,6 +1,7 @@
 import type { Types } from "mongoose";
 import uid2 from "uid2";
 import User from "../models/User";
+import Badge from "../models/Badge";
 import { generatePassword } from "../helpers/auth";
 import { HttpError } from "../middlewares/error";
 
@@ -21,7 +22,11 @@ export const signup = async (
 
   const { hash, salt, token } = generatePassword(password);
 
-  const user = await User.create({ email, username, hash, salt, token });
+  // Préremplit tous les badges du catalogue à value 0 (pas encore gagnés).
+  const catalog = await Badge.find();
+  const badges = catalog.map((badge) => ({ badge: badge._id, value: 0 }));
+
+  const user = await User.create({ email, username, hash, salt, token, badges });
 
   return { _id: user._id, email: user.email, username: user.username, token: user.token };
 };

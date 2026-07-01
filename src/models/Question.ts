@@ -11,6 +11,12 @@ export enum QuestionCategory {
   Specialty = "specialty",
 }
 
+export enum TargetAudience {
+  Parent = "parent",
+  Child = "child",
+  All = "all",
+}
+
 const AnswerSchema = new Schema(
   {
     id: { type: String, required: true },
@@ -28,11 +34,7 @@ const QuestionSchema = new Schema({
   question: { type: String, required: true },
   answers: { type: [AnswerSchema], required: true },
   solutionId: { type: String, required: true },
-  pointCulture: { type: String },
-  coordinate: {
-    lon: { type: Number },
-    lat: { type: Number },
-  },
+  funFact: { type: String },
   localisation: {
     type: {
       type: String,
@@ -40,10 +42,10 @@ const QuestionSchema = new Schema({
     },
     coordinates: { type: [Number] },
   },
-  rayonDeclenchement: { type: Number },
-  publicCible: {
+  triggerRadius: { type: Number },
+  targetAudience: {
     type: String,
-    enum: ["parent", "enfant", "tous"],
+    enum: Object.values(TargetAudience),
   },
   locationTitle: { type: String },
   category: { type: String },

@@ -5,6 +5,7 @@ import cors from "cors";
 import defaultRouter from "./routes/default";
 import authRouter from "./routes/authRoutes";
 import sessionRouter from "./routes/sessionRoutes";
+import badgeRouter from "./routes/badgeRoutes";
 
 import { PORT_SERVER } from "./constants";
 import { logInfo } from "./helpers/log";
@@ -23,6 +24,7 @@ app.use(cors());
 //routes
 app.use(authRouter);
 app.use(sessionRouter);
+app.use(badgeRouter);
 app.use(defaultRouter);
 
 //Error : on gère les erreurs de maniere global

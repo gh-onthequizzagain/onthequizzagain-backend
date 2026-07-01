@@ -1,5 +1,6 @@
 import { Router } from "express";
 import isAuthenticated from "../middlewares/isAuthenticated";
+import evaluateBadges from "../middlewares/evaluateBadges";
 import {
   createSessionController,
   getLastSessionController,
@@ -12,12 +13,17 @@ import {
 
 const router = Router();
 
-router.post("/session", isAuthenticated, createSessionController);
+router.post("/session", isAuthenticated, evaluateBadges, createSessionController);
 router.get("/sessions", isAuthenticated, getSessionsController);
 router.get("/session", isAuthenticated, getLastSessionController);
 router.get("/session/:id", isAuthenticated, getSessionController);
-router.patch("/session/:id", isAuthenticated, updateSessionController);
-router.post("/session/:id/question", isAuthenticated, addQuestionController);
-router.patch("/session/:id/question/:questionId", isAuthenticated, answerQuestionController);
+router.patch("/session/:id", isAuthenticated, evaluateBadges, updateSessionController);
+router.post("/session/:id/question", isAuthenticated, evaluateBadges, addQuestionController);
+router.patch(
+  "/session/:id/question/:questionId",
+  isAuthenticated,
+  evaluateBadges,
+  answerQuestionController
+);
 
 export default router;
