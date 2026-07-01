@@ -4,6 +4,7 @@ import evaluateBadges from "../middlewares/evaluateBadges";
 import {
   createSessionController,
   getLastSessionController,
+  getSessionsController,
   getSessionController,
   updateSessionController,
   addQuestionController,
@@ -13,10 +14,16 @@ import {
 const router = Router();
 
 router.post("/session", isAuthenticated, evaluateBadges, createSessionController);
+router.get("/sessions", isAuthenticated, getSessionsController);
 router.get("/session", isAuthenticated, getLastSessionController);
 router.get("/session/:id", isAuthenticated, getSessionController);
 router.patch("/session/:id", isAuthenticated, evaluateBadges, updateSessionController);
 router.post("/session/:id/question", isAuthenticated, evaluateBadges, addQuestionController);
-router.patch("/session/:id/question/:questionId", isAuthenticated, evaluateBadges, answerQuestionController);
+router.patch(
+  "/session/:id/question/:questionId",
+  isAuthenticated,
+  evaluateBadges,
+  answerQuestionController
+);
 
 export default router;
