@@ -183,6 +183,7 @@ export const listBadges = async (token: string) => {
       name: badge.name,
       description: badge.description,
       image: badge.image,
+      color: badge.color,
       value: valueMap.get(badge._id.toString()) ?? 0,
       total: badge.value,
       earned: earnedAt !== undefined,

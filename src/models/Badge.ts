@@ -27,6 +27,11 @@ const BadgeSchema = new Schema(
       type: Number,
       required: true,
     },
+    color: {
+      type: String,
+      required: true,
+      trim: true,
+    },
   },
   { timestamps: true },
 );
