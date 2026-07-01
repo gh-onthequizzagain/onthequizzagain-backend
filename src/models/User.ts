@@ -1,5 +1,14 @@
 import { Schema, model, InferSchemaType, type Types } from "mongoose";
 
+const EarnedBadgeSchema = new Schema(
+  {
+    badge: { type: Schema.Types.ObjectId, ref: "Badge", required: true },
+    value: { type: Number, default: 0 },
+    earnedAt: { type: Date, default: null }, // null = pas encore gagné
+  },
+  { _id: false },
+);
+
 const UserSchema = new Schema(
   {
     email: {
@@ -26,6 +35,10 @@ const UserSchema = new Schema(
     hash: {
       type: String,
       required: true,
+    },
+    badges: {
+      type: [EarnedBadgeSchema],
+      default: [],
     },
   },
   { timestamps: true },
